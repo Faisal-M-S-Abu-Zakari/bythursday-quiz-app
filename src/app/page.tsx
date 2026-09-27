@@ -1,69 +1,156 @@
-import Image from "next/image";
+/**
+ * Login/User Selection Page - Select or enter student ID
+ */
 
-export default function Home() {
+'use client';
+
+import { useState } from 'react';
+import { useStudent } from '@/context/StudentContext';
+import { mockStudents } from '@/data/mockData';
+import { BookOpen, LogIn } from 'lucide-react';
+
+export default function LoginPage() {
+  const { setCurrentStudent } = useStudent();
+  const [selectedClass, setSelectedClass] = useState<'10A' | '10B' | '11A'>('10A');
+  const [studentId, setStudentId] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const classStudents = mockStudents.filter((s) => s.classCode === selectedClass);
+
+  const handleQuickSelect = (studentId: string) => {
+    const student = mockStudents.find((s) => s.id === studentId);
+    if (student) {
+      setCurrentStudent(student);
+      window.location.href = '/quizzes';
+    }
+  };
+
+  const handleIdSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const student = mockStudents.find((s) => s.id === studentId);
+      if (!student) {
+        setError('Student ID not found. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      setCurrentStudent(student);
+      window.location.href = '/quizzes';
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <BookOpen size={40} className="text-indigo-600" />
+          <h1 className="text-4xl font-bold text-gray-800">byThursday</h1>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+        <p className="text-gray-600 text-lg">Quiz Assessment Platform</p>
+        <p className="text-gray-500 text-sm mt-2">Nour Tutoring Centre - Amman</p>
+      </div>
+
+      {/* Main Container */}
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+        {/* Class Selector */}
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Select Your Class</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {(['10A', '10B', '11A'] as const).map((classCode) => (
+              <button
+                key={classCode}
+                onClick={() => {
+                  setSelectedClass(classCode);
+                  setStudentId('');
+                  setError('');
+                }}
+                className={`py-3 px-4 rounded-lg font-semibold transition-all ${
+                  selectedClass === classCode
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {classCode}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Student List */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            Students in {selectedClass} ({classStudents.length})
+          </h3>
+          <div className="max-h-64 overflow-y-auto space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+            {classStudents.map((student) => (
+              <button
+                key={student.id}
+                onClick={() => handleQuickSelect(student.id)}
+                className="w-full text-left p-3 rounded-lg hover:bg-indigo-50 transition-colors border border-transparent hover:border-indigo-200"
+              >
+                <p className="font-medium text-gray-800">{student.name}</p>
+                <p className="text-xs text-gray-500">{student.id}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">OR</span>
+          </div>
+        </div>
+
+        {/* Manual ID Search */}
+        <form onSubmit={handleIdSearch} className="space-y-4">
+          <div>
+            <label htmlFor="studentId" className="block text-sm font-semibold text-gray-700 mb-2">
+              Enter Student ID
+            </label>
+            <input
+              id="studentId"
+              type="text"
+              placeholder="e.g., student_001"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-indigo-500 transition-colors"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <LogIn size={20} />
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </form>
+      </div>
+
+      {/* Footer Info */}
+      <p className="text-gray-600 text-xs mt-8 max-w-md text-center">
+        This is a demo platform. Select a student to access available quizzes for your class.
+      </p>
     </div>
   );
 }
