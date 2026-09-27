@@ -1,0 +1,120 @@
+#!/bin/bash
+# PHASE 2 - IMPLEMENTATION COMPLETE
+# Git Commands Summary for Manual Execution
+
+# ============================================================================
+# PHASE 2: STUDENT QUIZ TAKING EXPERIENCE
+# ============================================================================
+# This script contains all git commands needed to commit Phase 2.
+# Run each section sequentially from your project root.
+
+# ============================================================================
+# SECTION 1: CREATE BRANCH
+# ============================================================================
+
+git checkout -b phase/2-student-experience
+
+# ============================================================================
+# SECTION 2: STAGE ALL PHASE 2 FILES
+# ============================================================================
+
+# Context Management
+git add src/context/StudentContext.tsx
+
+# UI Components
+git add src/components/QuizTimer.tsx
+
+# Utility Functions
+git add src/lib/utils.ts
+
+# App Pages & Layout
+git add src/app/layout.tsx
+git add src/app/page.tsx
+git add src/app/quizzes/page.tsx
+git add "src/app/quizzes/\[id\]/page.tsx"
+git add "src/app/results/\[attemptId\]/page.tsx"
+
+# Styling
+git add src/app/globals.css
+
+# Configuration
+git add tailwind.config.js
+git add postcss.config.js
+git add tsconfig.json
+
+# Dependencies
+git add package.json
+
+# Documentation
+git add PHASE_2_SUMMARY.md
+git add README_PHASE2.md
+
+# ============================================================================
+# SECTION 3: COMMIT WITH DETAILED MESSAGE
+# ============================================================================
+
+git commit -m "feat: Phase 2 - Student quiz taking experience (mobile-first, RTL-ready)
+
+ADD NEW FEATURES:
+- StudentContext: Global React Context for student state management
+- Login Page (page.tsx): Class selection + student ID search
+- Quiz Listing (quizzes/page.tsx): Shows available quizzes with metadata
+- Quiz Interface (quizzes/[id]/page.tsx): Interactive quiz with timer & RTL
+- Results Page (results/[attemptId]/page.tsx): Score breakdown & analytics
+- QuizTimer Component: Live countdown with warning states
+- Utility Functions: RTL support, time formatting, validation
+
+IMPLEMENT CORE FEATURES:
+✓ Live countdown timer with auto-submit on expiry
+✓ Full Arabic/RTL support for questions and interface
+✓ Mobile-first responsive design (320px+)
+✓ Single-submission enforcement (no retakes)
+✓ Question-by-question navigation with progress tracking
+✓ Instant results with score breakdown:
+  - Total score and percentage
+  - Correct vs wrong answer counts
+  - Negative marking deductions
+  - Performance level (excellent/good/fair/poor)
+
+UPDATE CONFIGURATION:
+- tsconfig.json: Strict TypeScript + @ path alias
+- tailwind.config.js: Custom color palette
+- postcss.config.js: Tailwind + Autoprefixer
+- globals.css: RTL support + animations
+- package.json: Next.js 15, React 19, Tailwind, Lucide
+
+UX ENHANCEMENTS:
+- Sticky timer header visible during quiz
+- Touch-friendly buttons (48px minimum)
+- Question number grid for mobile navigation
+- Visual feedback for selected answers
+- Loading and error states
+- Smooth transitions and animations
+
+DATA FLOW:
+Login → Student Context → Quiz Listing → Quiz Interface
+→ Score Calculation → Results Display"
+
+# ============================================================================
+# SECTION 4: PUSH TO REMOTE
+# ============================================================================
+
+git push -u origin phase/2-student-experience
+
+# ============================================================================
+# OPTIONAL: CREATE GITHUB PULL REQUEST
+# ============================================================================
+
+# If using GitHub with CLI installed:
+# gh pr create --title "Phase 2: Student Quiz Taking Experience" \
+#   --body "Mobile-first, RTL-ready quiz interface for students with live timer and instant results"
+
+# ============================================================================
+# OPTIONAL: MERGE TO MAIN
+# ============================================================================
+
+# After review and approval:
+# git checkout main
+# git pull origin main
+# git merge phase/2-student-experience
+# git push origin main
