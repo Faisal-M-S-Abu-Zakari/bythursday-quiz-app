@@ -1,9 +1,10 @@
 /**
- * Root Layout with RTL support and StudentProvider
+ * Root Layout with RTL support, StudentProvider, and TeacherProvider
  */
 
 import type { Metadata } from "next";
 import { StudentProvider } from "@/context/StudentContext";
+import { TeacherProvider } from "@/context/TeacherContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta charSet="utf-8" />
       </head>
       <body className="antialiased bg-gray-50 font-sans">
-        <StudentProvider>{children}</StudentProvider>
+        <StudentProvider>
+          <TeacherProvider>{children}</TeacherProvider>
+        </StudentProvider>
       </body>
     </html>
   );
