@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react";
 import { LMSHeader } from "@/components/LMSHeader";
+import { BrandEmblem } from "@/components/BrandLogo";
 import { useAuth } from "@/context/AuthContext";
 import {
   DEMO_CREDENTIALS,
@@ -65,9 +66,7 @@ export default function LoginPage() {
         </section>
         <section className="bg-white shadow-slate-200/70 shadow-xl mx-auto p-6 sm:p-8 border border-slate-200 rounded-3xl w-full max-w-md">
           <div className="mb-7 text-center">
-            <span className="place-items-center grid bg-gradient-to-br from-indigo-700 to-blue-600 shadow-indigo-200 shadow-lg mx-auto mb-4 rounded-2xl w-14 h-14 text-white">
-              <BookOpen size={26} />
-            </span>
+            <BrandEmblem size="lg" className="mx-auto mb-4" />
             <h1 className="font-bold text-slate-900 text-2xl tracking-tight">
               Welcome back
             </h1>

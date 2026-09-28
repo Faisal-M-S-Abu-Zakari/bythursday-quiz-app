@@ -19,6 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { LMSHeader } from "@/components/LMSHeader";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/context/AuthContext";
 import { mockTeachers, mockAdmin, mockStudents } from "@/data/mockData";
 import { getDashboardPath } from "@/lib/auth";
@@ -587,15 +588,7 @@ export default function HomePage() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4 pb-12 border-b border-slate-800">
             {/* Col 1 */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-indigo-600 text-white font-bold">
-                  <BookOpen size={20} />
-                </span>
-                <div>
-                  <span className="block font-bold text-sm leading-tight">Amman Tutoring Centre</span>
-                  <span className="block text-xs text-indigo-400" lang="ar">مركز عمّان التعليمي</span>
-                </div>
-              </div>
+              <BrandLogo variant="white" size="md" href="/" />
               <p className="text-xs text-slate-400 leading-relaxed">
                 Mobile-first, production-ready assessment and learning platform for Nour Tutoring Centre in Amman, Jordan.
               </p>

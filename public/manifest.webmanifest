@@ -1,0 +1,19 @@
+{
+  "name": "Amman Tutoring Centre - Quiz & Assessment Platform",
+  "short_name": "مركز عمّان",
+  "description": "منصة التقييم والامتحانات المحوسبة لمركز عمّان التعليمي في الأردن",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#312e81",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import {
   Bell,
-  BookOpen,
   LogOut,
   Mail,
   CheckCheck,
@@ -18,6 +17,7 @@ import { useCommunication } from "@/context/CommunicationContext";
 import { getDashboardPath } from "@/lib/auth";
 import { MessageComposeModal } from "@/components/MessageComposeModal";
 import { TeacherMessage } from "@/types/communication";
+import { BrandLogo } from "@/components/BrandLogo";
 
 interface LMSHeaderProps {
   role?: "student" | "teacher" | "admin" | "nour";
@@ -93,26 +93,10 @@ export function LMSHeader({ name, detail, onLogout }: LMSHeaderProps) {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           {/* Logo & Brand */}
-          <Link
+          <BrandLogo
+            size="md"
             href={user ? getDashboardPath(user) : "/"}
-            className="flex items-center gap-3 min-w-0 group"
-          >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-200 transition group-hover:scale-105">
-              <BookOpen size={22} strokeWidth={2.3} />
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-bold tracking-tight text-slate-900 sm:text-base">
-                Amman Learning Centre
-              </span>
-              <span
-                className="block truncate text-xs font-semibold text-indigo-600"
-                lang="ar"
-                dir="rtl"
-              >
-                مركز عمّان التعليمي
-              </span>
-            </span>
-          </Link>
+          />
 
           {/* Right Actions & Menus */}
           <div ref={containerRef} className="flex items-center gap-1.5 sm:gap-3 shrink-0">
