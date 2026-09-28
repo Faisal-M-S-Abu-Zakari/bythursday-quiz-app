@@ -2,14 +2,17 @@
  * Create Quiz Form - Allows teachers to create new quizzes
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTeacher } from '@/context/TeacherContext';
-import { Quiz, Question } from '@/types/quiz';
-import { ClassCode } from '@/types/user';
-import { Plus, Trash2, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTeacher } from "@/context/TeacherContext";
+import { useAuth } from "@/context/AuthContext";
+import { Quiz, Question } from "@/types/quiz";
+import { ClassCode } from "@/types/user";
+import { Plus, Trash2, ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { LMSHeader } from "@/components/LMSHeader";
 
 interface QuestionForm {
   id: string;
@@ -19,50 +22,62 @@ interface QuestionForm {
 }
 
 export default function CreateQuizPage() {
-  const { currentTeacher, addQuiz } = useTeacher();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('');
-  const [language, setLanguage] = useState<'ar' | 'en'>('en');
-  const [classCode, setClassCode] = useState<ClassCode>('10A');
+  const router = useRouter();
+  const { user, isAuthReady } = useAuth();
+  const { addQuiz } = useTeacher();
+  const canCreateQuiz = user?.role === "teacher" || user?.role === "admin";
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [language, setLanguage] = useState<"ar" | "en">("en");
+  const [classCode, setClassCode] = useState<ClassCode>("10A");
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [negativeMarking, setNegativeMarking] = useState(false);
   const [negativeMarksPerQuestion, setNegativeMarksPerQuestion] = useState(1);
-  const [openDate, setOpenDate] = useState('');
-  const [closeDate, setCloseDate] = useState('');
+  const [maxAttempts, setMaxAttempts] = useState<number>(1);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [examDate, setExamDate] = useState(todayStr);
+  const [startTime, setStartTime] = useState("08:00");
+  const [windowHours, setWindowHours] = useState(12);
   const [questions, setQuestions] = useState<QuestionForm[]>([
     {
-      id: '1',
-      text: '',
+      id: "1",
+      text: "",
       points: 5,
       options: [
-        { id: '1a', text: '', isCorrect: true },
-        { id: '1b', text: '', isCorrect: false },
-        { id: '1c', text: '', isCorrect: false },
-        { id: '1d', text: '', isCorrect: false },
+        { id: "1a", text: "", isCorrect: true },
+        { id: "1b", text: "", isCorrect: false },
+        { id: "1c", text: "", isCorrect: false },
+        { id: "1d", text: "", isCorrect: false },
       ],
     },
   ]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  if (!currentTeacher) {
+  useEffect(() => {
+    if (isAuthReady && !canCreateQuiz) router.replace("/login");
+  }, [canCreateQuiz, isAuthReady, router]);
+
+  if (!isAuthReady || !canCreateQuiz || !user) {
     return null;
   }
 
   const addQuestion = () => {
-    const newId = String(Math.max(...questions.map((q) => parseInt(q.id)), 0) + 1);
+    const newId = String(
+      Math.max(...questions.map((q) => parseInt(q.id)), 0) + 1,
+    );
     setQuestions([
       ...questions,
       {
         id: newId,
-        text: '',
+        text: "",
         points: 5,
         options: [
-          { id: `${newId}a`, text: '', isCorrect: true },
-          { id: `${newId}b`, text: '', isCorrect: false },
-          { id: `${newId}c`, text: '', isCorrect: false },
-          { id: `${newId}d`, text: '', isCorrect: false },
+          { id: `${newId}a`, text: "", isCorrect: true },
+          { id: `${newId}b`, text: "", isCorrect: false },
+          { id: `${newId}c`, text: "", isCorrect: false },
+          { id: `${newId}d`, text: "", isCorrect: false },
         ],
       },
     ]);
@@ -76,13 +91,16 @@ export default function CreateQuizPage() {
 
   const updateQuestion = (id: string, field: string, value: any) => {
     setQuestions(
-      questions.map((q) =>
-        q.id === id ? { ...q, [field]: value } : q
-      )
+      questions.map((q) => (q.id === id ? { ...q, [field]: value } : q)),
     );
   };
 
-  const updateOption = (questionId: string, optionId: string, field: string, value: any) => {
+  const updateOption = (
+    questionId: string,
+    optionId: string,
+    field: string,
+    value: any,
+  ) => {
     setQuestions(
       questions.map((q) =>
         q.id === questionId
@@ -91,43 +109,57 @@ export default function CreateQuizPage() {
               options: q.options.map((o) =>
                 o.id === optionId
                   ? { ...o, [field]: value }
-                  : field === 'isCorrect' && value
-                  ? { ...o, isCorrect: false }
-                  : o
+                  : field === "isCorrect" && value
+                    ? { ...o, isCorrect: false }
+                    : o,
               ),
             }
-          : q
-      )
+          : q,
+      ),
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (!title || !description || !subject) {
-      setError('Please fill in all required fields');
+      setError("Please fill in all required fields");
       return;
     }
 
     if (questions.length < 1) {
-      setError('Quiz must have at least 1 question');
+      setError("Quiz must have at least 1 question");
       return;
     }
 
     if (questions.some((q) => !q.text || q.options.some((o) => !o.text))) {
-      setError('All questions and options must have text');
+      setError("All questions and options must have text");
       return;
     }
 
     if (questions.some((q) => !q.options.some((o) => o.isCorrect))) {
-      setError('Each question must have at least one correct answer');
+      setError("Each question must have at least one correct answer");
       return;
     }
 
-    if (!openDate || !closeDate) {
-      setError('Please set open and close dates');
+    if (!examDate || !startTime) {
+      setError("Please set the exam date and start time");
+      return;
+    }
+
+    if (examDate < todayStr) {
+      setError("Exam window must start today or on a future date (cannot schedule in the past)");
+      return;
+    }
+
+    const openDateTime = new Date(`${examDate}T${startTime}:00`);
+    const closeDateTime = new Date(openDateTime.getTime() + windowHours * 60 * 60 * 1000);
+
+    // Verify same-day close window
+    if (closeDateTime.getDate() !== openDateTime.getDate()) {
+      setError("Exam window must close on the same day (~12 hours max window). Please adjust start time or duration.");
       return;
     }
 
@@ -139,13 +171,13 @@ export default function CreateQuizPage() {
         id: q.id,
         text: q.text,
         language,
-        type: 'multiple_choice',
+        type: "multiple_choice",
         options: q.options.map((o) => ({
           id: o.id,
           text: o.text,
           isCorrect: o.isCorrect,
         })),
-        correctOptionId: q.options.find((o) => o.isCorrect)?.id || '',
+        correctOptionId: q.options.find((o) => o.isCorrect)?.id || "",
         points: q.points,
         negativeMarks: negativeMarking ? negativeMarksPerQuestion : undefined,
       }));
@@ -164,57 +196,66 @@ export default function CreateQuizPage() {
           durationMinutes,
           negativeMarking,
           negativeMarksPerQuestion,
-          singleSubmission: true,
+          singleSubmission: maxAttempts === 1,
+          maxAttempts,
         },
-        createdBy: currentTeacher.id,
+        createdBy: user.id,
         createdAt: new Date(),
-        openDate: new Date(openDate),
-        closeDate: new Date(closeDate),
+        openDate: openDateTime,
+        closeDate: closeDateTime,
         totalPoints,
         isActive: true,
       };
 
       addQuiz(newQuiz);
-      window.location.href = '/teacher/dashboard';
+      router.push(
+        user.role === "admin" ? "/admin/dashboard" : "/teacher/dashboard",
+      );
     } catch (err) {
-      setError('Failed to create quiz. Please try again.');
+      setError("Failed to create quiz. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
+      <LMSHeader name={user.name} detail="Create an assessment" />
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <header className="top-0 z-50 sticky bg-white border-gray-200 border-b">
+        <div className="mx-auto px-4 py-4 max-w-4xl">
           <Link
             href="/teacher/dashboard"
-            className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2 mb-4"
+            className="flex items-center gap-2 mb-4 font-medium text-indigo-600 hover:text-indigo-700"
           >
             <ChevronLeft size={20} />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Quiz</h1>
+          <h1 className="font-bold text-gray-900 text-2xl">Create New Quiz</h1>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="mx-auto px-4 py-8 max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="bg-red-50 p-4 border border-red-200 rounded-lg text-red-700">
               {error}
             </div>
           )}
 
           {/* Basic Information */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white shadow p-6 rounded-lg">
+            <h2 className="mb-4 font-bold text-gray-900 text-lg">
+              Basic Information
+            </h2>
+            <div className="gap-6 grid md:grid-cols-2">
               <div>
-                <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="title"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Quiz Title *
                 </label>
                 <input
@@ -223,12 +264,15 @@ export default function CreateQuizPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Chapter 5 Assessment"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="subject"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Subject *
                 </label>
                 <input
@@ -237,12 +281,15 @@ export default function CreateQuizPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g., Arabic Literature"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="description"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Description *
                 </label>
                 <textarea
@@ -251,19 +298,22 @@ export default function CreateQuizPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of the quiz"
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="classCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="classCode"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Class *
                 </label>
                 <select
                   id="classCode"
                   value={classCode}
                   onChange={(e) => setClassCode(e.target.value as ClassCode)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 >
                   <option value="10A">10A</option>
                   <option value="10B">10B</option>
@@ -272,14 +322,17 @@ export default function CreateQuizPage() {
               </div>
 
               <div>
-                <label htmlFor="language" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="language"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Language *
                 </label>
                 <select
                   id="language"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'ar' | 'en')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  onChange={(e) => setLanguage(e.target.value as "ar" | "en")}
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 >
                   <option value="en">English</option>
                   <option value="ar">Arabic</option>
@@ -289,42 +342,187 @@ export default function CreateQuizPage() {
           </div>
 
           {/* Quiz Settings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Quiz Settings</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white shadow p-6 rounded-2xl border border-slate-200">
+            <h2 className="mb-4 font-bold text-slate-900 text-lg flex items-center justify-between">
+              <span>Quiz Settings & Assessment Rules / إعدادات الاختبار</span>
+              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                Phase 3 Config
+              </span>
+            </h2>
+
+            {/* Attempt Limits: 1 to 3 attempts */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label className="block mb-2 font-bold text-slate-800 text-sm">
+                Quiz Attempt Limit / عدد المحاولات المسموحة *
+              </label>
+              <p className="text-xs text-slate-500 mb-3">
+                Configure how many times each student can attempt this assessment (1–3 attempts).
+              </p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {[
+                  {
+                    num: 1,
+                    title: "1 Attempt (Strict)",
+                    titleAr: "محاولة واحدة",
+                    desc: "Official examination mode. Single submission recorded.",
+                  },
+                  {
+                    num: 2,
+                    title: "2 Attempts (Retake)",
+                    titleAr: "محاولتان",
+                    desc: "Permits 1 retake. System calculates highest score.",
+                  },
+                  {
+                    num: 3,
+                    title: "3 Attempts (Mastery)",
+                    titleAr: "ثلاث محاولات",
+                    desc: "Optimal for practice and diagnostic learning.",
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.num}
+                    type="button"
+                    onClick={() => setMaxAttempts(item.num)}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${
+                      maxAttempts === item.num
+                        ? "border-indigo-600 bg-white ring-2 ring-indigo-500/20 shadow-sm"
+                        : "border-slate-200 bg-white/70 hover:bg-white text-slate-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-slate-900 text-sm">{item.title}</span>
+                      <span
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          maxAttempts === item.num ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300"
+                        }`}
+                      >
+                        {maxAttempts === item.num && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-indigo-600" lang="ar">
+                      {item.titleAr}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{item.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Exam Window: Start Today/Future, Same-Day Close (~12 hours) */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label className="block mb-1 font-bold text-slate-800 text-sm">
+                Exam Window / نافذة الاختبار (نفس اليوم ~12 ساعة) *
+              </label>
+              <p className="text-xs text-slate-500 mb-4">
+                Assessment must open today or on a future date and close on the same day (~12 hours).
+              </p>
+
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="examDate" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Exam Date (Today or Future) *
+                  </label>
+                  <input
+                    id="examDate"
+                    type="date"
+                    min={todayStr}
+                    value={examDate}
+                    onChange={(e) => setExamDate(e.target.value)}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="startTime" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Window Opening Time *
+                  </label>
+                  <input
+                    id="startTime"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="windowHours" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Window Duration (Same-Day) *
+                  </label>
+                  <select
+                    id="windowHours"
+                    value={windowHours}
+                    onChange={(e) => setWindowHours(parseInt(e.target.value))}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white font-medium"
+                  >
+                    <option value={8}>8 hours (Half-day)</option>
+                    <option value={10}>10 hours (School day)</option>
+                    <option value={12}>12 hours (Standard ~12h Window)</option>
+                    <option value={14}>14 hours (Extended same-day)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Dynamic preview banner */}
+              {examDate && startTime && (
+                <div className="mt-3.5 rounded-xl bg-indigo-50/80 p-3 border border-indigo-200/70 text-xs text-indigo-900 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="font-bold">Scheduled Window: </span>
+                    <span>
+                      Opens {examDate} at {startTime} &rarr; Closes strictly same-day at{" "}
+                      {new Date(
+                        new Date(`${examDate}T${startTime}:00`).getTime() + windowHours * 60 * 60 * 1000
+                      ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      {" "}({windowHours} hours)
+                    </span>
+                  </div>
+                  <span className="font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-md shadow-2xs">
+                    Same-Day Close &check;
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="gap-6 grid md:grid-cols-2">
               <div>
-                <label htmlFor="duration" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Duration (minutes) *
+                <label
+                  htmlFor="duration"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
+                  Assessment Time Limit (minutes) *
                 </label>
                 <input
                   id="duration"
                   type="number"
-                  min="1"
+                  min="5"
                   max="180"
                   value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 20)}
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Negative Marking
+                <label className="block mb-2 font-semibold text-gray-700 text-sm">
+                  Negative Marking Rules
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer mt-2">
                   <input
                     type="checkbox"
                     checked={negativeMarking}
                     onChange={(e) => setNegativeMarking(e.target.checked)}
-                    className="w-4 h-4 rounded"
+                    className="rounded w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-gray-700">Enable negative marking</span>
+                  <span className="text-gray-700 text-sm font-medium">Enable negative marking deduction</span>
                 </label>
               </div>
 
               {negativeMarking && (
-                <div>
-                  <label htmlFor="negativeMarks" className="block text-sm font-semibold text-gray-700 mb-2">
+                <div className="md:col-span-2">
+                  <label
+                    htmlFor="negativeMarks"
+                    className="block mb-2 font-semibold text-gray-700 text-sm"
+                  >
                     Negative Marks Per Wrong Answer
                   </label>
                   <input
@@ -334,48 +532,26 @@ export default function CreateQuizPage() {
                     max="10"
                     step="0.5"
                     value={negativeMarksPerQuestion}
-                    onChange={(e) => setNegativeMarksPerQuestion(parseFloat(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                    onChange={(e) =>
+                      setNegativeMarksPerQuestion(parseFloat(e.target.value) || 1)
+                    }
+                    className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                   />
                 </div>
               )}
-
-              <div>
-                <label htmlFor="openDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Open Date *
-                </label>
-                <input
-                  id="openDate"
-                  type="date"
-                  value={openDate}
-                  onChange={(e) => setOpenDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="closeDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Close Date *
-                </label>
-                <input
-                  id="closeDate"
-                  type="date"
-                  value={closeDate}
-                  onChange={(e) => setCloseDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
-                />
-              </div>
             </div>
           </div>
 
           {/* Questions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Questions ({questions.length})</h2>
+          <div className="bg-white shadow p-6 rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-gray-900 text-lg">
+                Questions ({questions.length})
+              </h2>
               <button
                 type="button"
                 onClick={addQuestion}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg font-medium text-white transition-colors"
               >
                 <Plus size={18} />
                 Add Question
@@ -384,8 +560,11 @@ export default function CreateQuizPage() {
 
             <div className="space-y-6">
               {questions.map((question, idx) => (
-                <div key={question.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between mb-4">
+                <div
+                  key={question.id}
+                  className="bg-gray-50 p-4 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-900">
                       Question {idx + 1}
                     </h3>
@@ -393,31 +572,31 @@ export default function CreateQuizPage() {
                       <button
                         type="button"
                         onClick={() => removeQuestion(question.id)}
-                        className="text-red-600 hover:text-red-700 p-2"
+                        className="p-2 text-red-600 hover:text-red-700"
                       >
                         <Trash2 size={18} />
                       </button>
                     )}
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="gap-4 grid md:grid-cols-2 mb-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 font-semibold text-gray-700 text-sm">
                         Question Text *
                       </label>
                       <textarea
                         value={question.text}
                         onChange={(e) =>
-                          updateQuestion(question.id, 'text', e.target.value)
+                          updateQuestion(question.id, "text", e.target.value)
                         }
                         placeholder="Enter question text"
                         rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                        className="px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 font-semibold text-gray-700 text-sm">
                         Points *
                       </label>
                       <input
@@ -426,16 +605,22 @@ export default function CreateQuizPage() {
                         max="100"
                         value={question.points}
                         onChange={(e) =>
-                          updateQuestion(question.id, 'points', parseInt(e.target.value))
+                          updateQuestion(
+                            question.id,
+                            "points",
+                            parseInt(e.target.value),
+                          )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                        className="px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                       />
                     </div>
                   </div>
 
                   {/* Options */}
                   <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-700">Options *</h4>
+                    <h4 className="font-semibold text-gray-700 text-sm">
+                      Options *
+                    </h4>
                     {question.options.map((option) => (
                       <div key={option.id} className="flex items-center gap-3">
                         <input
@@ -443,7 +628,12 @@ export default function CreateQuizPage() {
                           name={`correct_${question.id}`}
                           checked={option.isCorrect}
                           onChange={(e) =>
-                            updateOption(question.id, option.id, 'isCorrect', e.target.checked)
+                            updateOption(
+                              question.id,
+                              option.id,
+                              "isCorrect",
+                              e.target.checked,
+                            )
                           }
                           className="w-4 h-4"
                         />
@@ -451,10 +641,15 @@ export default function CreateQuizPage() {
                           type="text"
                           value={option.text}
                           onChange={(e) =>
-                            updateOption(question.id, option.id, 'text', e.target.value)
+                            updateOption(
+                              question.id,
+                              option.id,
+                              "text",
+                              e.target.value,
+                            )
                           }
                           placeholder="Enter option text"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none"
                         />
                       </div>
                     ))}
@@ -468,16 +663,16 @@ export default function CreateQuizPage() {
           <div className="flex gap-4">
             <Link
               href="/teacher/dashboard"
-              className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors text-center"
+              className="flex-1 hover:bg-gray-50 px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 text-center transition-colors"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 px-6 py-3 rounded-lg font-semibold text-white transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Quiz'}
+              {loading ? "Creating..." : "Create Quiz"}
             </button>
           </div>
         </form>

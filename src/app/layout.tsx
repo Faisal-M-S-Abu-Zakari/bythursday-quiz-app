@@ -1,28 +1,43 @@
+import "./globals.css";
+
 /**
  * Root Layout with RTL support, StudentProvider, and TeacherProvider
  */
-
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { StudentProvider } from "@/context/StudentContext";
 import { TeacherProvider } from "@/context/TeacherContext";
-import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { CommunicationProvider } from "@/context/CommunicationContext";
 
 export const metadata: Metadata = {
-  title: "byThursday - Quiz Platform",
-  description: "Mobile-first quiz assessment platform for Nour tutoring centre",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  title: "Amman Tutoring Centre | Learning Platform",
+  description:
+    "A mobile-first quiz and learning platform for Amman Tutoring Centre",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ar" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className="antialiased bg-gray-50 font-sans">
-        <StudentProvider>
-          <TeacherProvider>{children}</TeacherProvider>
-        </StudentProvider>
+      <body className="bg-slate-50 font-sans antialiased">
+        <AuthProvider>
+          <CommunicationProvider>
+            <StudentProvider>
+              <TeacherProvider>{children}</TeacherProvider>
+            </StudentProvider>
+          </CommunicationProvider>
+        </AuthProvider>
       </body>
     </html>
   );
