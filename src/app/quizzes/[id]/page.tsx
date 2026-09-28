@@ -10,7 +10,6 @@ import { mockData } from "@/data/mockData";
 import { QuizTimer } from "@/components/QuizTimer";
 import {
   generateAttemptId,
-  hasStudentSubmitted,
   getTextDirection,
 } from "@/lib/utils";
 import { calculateScore } from "@/lib/scoring";
@@ -31,6 +30,7 @@ export default function QuizPage({ params }: PageProps) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [attemptNumber, setAttemptNumber] = useState<number>(1);
   const [loading, setLoading] = useState(true);
 
   // Resolve params
@@ -48,12 +48,30 @@ export default function QuizPage({ params }: PageProps) {
       return;
     }
 
-    // Check if already submitted
-    if (hasStudentSubmitted(currentStudent.id, foundQuiz.id, [])) {
-      window.location.href = `/results/${currentStudent.id}_${foundQuiz.id}`;
+    // Check attempts already completed
+    const pastAttempts: StudentQuizAttempt[] = [];
+    if (typeof window !== "undefined") {
+      for (let index = 0; index < sessionStorage.length; index += 1) {
+        const key = sessionStorage.key(index);
+        if (!key?.startsWith("attempt_")) continue;
+        try {
+          const parsed = JSON.parse(sessionStorage.getItem(key) ?? "null");
+          if (parsed?.studentId === currentStudent.id && parsed?.quizId === foundQuiz.id && parsed?.hasSubmitted) {
+            pastAttempts.push(parsed);
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    const maxAttempts = foundQuiz.config.maxAttempts ?? (foundQuiz.config.singleSubmission ? 1 : 1);
+    if (pastAttempts.length >= maxAttempts) {
+      // Reached limit! Redirect to results
+      const latest = pastAttempts[pastAttempts.length - 1];
+      window.location.href = `/results/${latest.id}`;
       return;
     }
 
+    setAttemptNumber(pastAttempts.length + 1);
     setQuiz(foundQuiz);
     setLoading(false);
   }, [resolvedParams, currentStudent, isStudentReady]);
@@ -95,6 +113,7 @@ export default function QuizPage({ params }: PageProps) {
       id: generateAttemptId(),
       studentId: currentStudent.id,
       quizId: quiz.id,
+      attemptNumber,
       startedAt: new Date(),
       completedAt: new Date(),
       answers: quiz.questions.map((q) => ({
@@ -141,9 +160,14 @@ export default function QuizPage({ params }: PageProps) {
               )}
             </Link>
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-slate-900 text-sm sm:text-base truncate">
-                {quiz.title}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                  {quiz.title}
+                </h1>
+                <span className="rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shrink-0">
+                  Attempt #{attemptNumber} of {quiz.config.maxAttempts ?? 1}
+                </span>
+              </div>
               <p className="text-slate-500 text-xs">
                 {isArabic ? "السؤال" : "Question"} {currentQuestionIndex + 1} of{" "}
                 {quiz.questions.length}

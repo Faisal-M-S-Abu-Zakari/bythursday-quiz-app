@@ -444,10 +444,23 @@ const arabicQuestions: Question[] = [
   },
 ];
 
+// Helper to construct realistic same-day exam windows (~12 hours) anchored around current date
+export const getSameDayExamWindow = (dayOffset: number = 0, startHour: number = 8, durationHours: number = 12) => {
+  const openDate = new Date();
+  openDate.setDate(openDate.getDate() + dayOffset);
+  openDate.setHours(startHour, 0, 0, 0);
+
+  const closeDate = new Date(openDate);
+  closeDate.setHours(startHour + durationHours, 0, 0, 0);
+  return { openDate, closeDate };
+};
+
+const arabicExamWindow = getSameDayExamWindow(0, 8, 12); // Today 08:00 to 20:00 (12 hours)
+
 export const mockArabicQuiz: Quiz = {
   id: "quiz_ar_001",
   title: "أدب الجاهلية - اختبار شامل",
-  description: "اختبار شامل عن الأدب الجاهلي والعصر الجاهلي",
+  description: "اختبار شامل عن الأدب الجاهلي والمعلقات والعصر الجاهلي",
   subject: "Arabic Literature",
   language: "ar",
   classCode: "10A",
@@ -456,12 +469,13 @@ export const mockArabicQuiz: Quiz = {
     durationMinutes: 20,
     negativeMarking: true,
     negativeMarksPerQuestion: 1,
-    singleSubmission: true,
+    singleSubmission: false,
+    maxAttempts: 2, // Configurable: 2 attempts permitted
   },
   createdBy: "teacher_001",
   createdAt: new Date("2024-09-01"),
-  openDate: new Date(),
-  closeDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+  openDate: arabicExamWindow.openDate,
+  closeDate: arabicExamWindow.closeDate,
   totalPoints: 75,
   isActive: true,
 };
@@ -701,6 +715,8 @@ const englishQuestions: Question[] = [
   },
 ];
 
+const englishExamWindow = getSameDayExamWindow(0, 9, 12); // Today 09:00 to 21:00 (12 hours)
+
 export const mockEnglishQuiz: Quiz = {
   id: "quiz_en_001",
   title: "English Grammar Fundamentals",
@@ -714,13 +730,119 @@ export const mockEnglishQuiz: Quiz = {
     durationMinutes: 20,
     negativeMarking: false,
     negativeMarksPerQuestion: 0,
-    singleSubmission: true,
+    singleSubmission: false,
+    maxAttempts: 3, // Configurable: 3 attempts permitted for practice
   },
   createdBy: "teacher_002",
   createdAt: new Date("2024-09-05"),
-  openDate: new Date(),
-  closeDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+  openDate: englishExamWindow.openDate,
+  closeDate: englishExamWindow.closeDate,
   totalPoints: 75,
+  isActive: true,
+};
+
+// ============================================================================
+// QUIZ 3: ADVANCED SCIENCE & PHYSICS (Class 11A - Scheduled Future Exam Window)
+// ============================================================================
+
+const scienceExamWindow = getSameDayExamWindow(1, 8, 12); // Tomorrow 08:00 to 20:00 (12 hours)
+
+export const mockScienceQuiz: Quiz = {
+  id: "quiz_sci_001",
+  title: "الفيزياء والعلوم العامة - الميكانيكا والطاقة",
+  description: "تقييم شامل في مفاهيم القوى، الحركة، وقوانين نيوتن لطلبة الصف الحادي عشر",
+  subject: "Physics & General Sciences",
+  language: "ar",
+  classCode: "11A",
+  questions: [
+    {
+      id: "sci_q1",
+      text: "ما هي وحدة قياس القوة في النظام الدولي للوحدات (SI)؟",
+      language: "ar",
+      type: "multiple_choice",
+      options: [
+        { id: "sci_opt_1_1", text: "نيوتن (Newton)", isCorrect: true },
+        { id: "sci_opt_1_2", text: "جول (Joule)", isCorrect: false },
+        { id: "sci_opt_1_3", text: "باسكال (Pascal)", isCorrect: false },
+        { id: "sci_opt_1_4", text: "واط (Watt)", isCorrect: false },
+      ],
+      correctOptionId: "sci_opt_1_1",
+      points: 10,
+      negativeMarks: 2,
+    },
+    {
+      id: "sci_q2",
+      text: "ينص قانون نيوتن الأول على أن الجسم الساكن يبقى ساكناً ما لم تؤثر عليه:",
+      language: "ar",
+      type: "multiple_choice",
+      options: [
+        { id: "sci_opt_2_1", text: "قوة محصلة خارجية", isCorrect: true },
+        { id: "sci_opt_2_2", text: "حرارة مرتفعة", isCorrect: false },
+        { id: "sci_opt_2_3", text: "سرعة ثابتة", isCorrect: false },
+        { id: "sci_opt_2_4", text: "طاقة وضع مخزونة", isCorrect: false },
+      ],
+      correctOptionId: "sci_opt_2_1",
+      points: 10,
+      negativeMarks: 2,
+    },
+    {
+      id: "sci_q3",
+      text: "ما العلاقة الرياضية التي تربط بين الشغل والقوة والإزاحة؟",
+      language: "ar",
+      type: "multiple_choice",
+      options: [
+        { id: "sci_opt_3_1", text: "W = F × d × cos(θ)", isCorrect: true },
+        { id: "sci_opt_3_2", text: "W = m × g × h", isCorrect: false },
+        { id: "sci_opt_3_3", text: "W = 0.5 × m × v²", isCorrect: false },
+        { id: "sci_opt_3_4", text: "W = F / a", isCorrect: false },
+      ],
+      correctOptionId: "sci_opt_3_1",
+      points: 10,
+      negativeMarks: 2,
+    },
+    {
+      id: "sci_q4",
+      text: "تسارع الجاذبية الأرضية التقريبي قرب سطح الأرض يساوي:",
+      language: "ar",
+      type: "multiple_choice",
+      options: [
+        { id: "sci_opt_4_1", text: "9.8 م/ث²", isCorrect: true },
+        { id: "sci_opt_4_2", text: "3.14 م/ث²", isCorrect: false },
+        { id: "sci_opt_4_3", text: "100 م/ث²", isCorrect: false },
+        { id: "sci_opt_4_4", text: "1.62 م/ث²", isCorrect: false },
+      ],
+      correctOptionId: "sci_opt_4_1",
+      points: 10,
+      negativeMarks: 2,
+    },
+    {
+      id: "sci_q5",
+      text: "أي من الكميات الفيزيائية التالية تُعتبر كمية متجهة (Vector)؟",
+      language: "ar",
+      type: "multiple_choice",
+      options: [
+        { id: "sci_opt_5_1", text: "السرعة المتجهة (Velocity)", isCorrect: true },
+        { id: "sci_opt_5_2", text: "الكتلة (Mass)", isCorrect: false },
+        { id: "sci_opt_5_3", text: "الزمن (Time)", isCorrect: false },
+        { id: "sci_opt_5_4", text: "درجة الحرارة (Temperature)", isCorrect: false },
+      ],
+      correctOptionId: "sci_opt_5_1",
+      points: 10,
+      negativeMarks: 2,
+    },
+  ],
+  config: {
+    durationMinutes: 15,
+    negativeMarking: true,
+    negativeMarksPerQuestion: 2,
+    singleSubmission: true,
+    maxAttempts: 1, // Strict single attempt
+  },
+  createdBy: "teacher_003",
+  createdAt: new Date("2024-09-10"),
+  openDate: scienceExamWindow.openDate,
+  closeDate: scienceExamWindow.closeDate,
+  totalPoints: 50,
   isActive: true,
 };
 
@@ -732,5 +854,5 @@ export const mockData = {
   teachers: mockTeachers,
   admin: mockAdmin,
   students: mockStudents,
-  quizzes: [mockArabicQuiz, mockEnglishQuiz],
+  quizzes: [mockArabicQuiz, mockEnglishQuiz, mockScienceQuiz],
 };

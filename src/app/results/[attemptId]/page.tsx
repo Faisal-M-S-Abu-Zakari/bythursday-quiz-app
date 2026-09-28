@@ -17,6 +17,7 @@ import {
   Trophy,
   AlertCircle,
   Home,
+  Repeat,
 } from "lucide-react";
 import Link from "next/link";
 import { LMSHeader } from "@/components/LMSHeader";
@@ -32,6 +33,7 @@ export default function ResultsPage({ params }: PageProps) {
   } | null>(null);
   const [attempt, setAttempt] = useState<StudentQuizAttempt | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [totalAttemptsCount, setTotalAttemptsCount] = useState<number>(1);
   const [loading, setLoading] = useState(true);
 
   // Resolve params
@@ -53,6 +55,19 @@ export default function ResultsPage({ params }: PageProps) {
 
     const parsedAttempt: StudentQuizAttempt = JSON.parse(attemptData);
     setAttempt(parsedAttempt);
+
+    let count = 0;
+    for (let index = 0; index < sessionStorage.length; index += 1) {
+      const key = sessionStorage.key(index);
+      if (!key?.startsWith("attempt_")) continue;
+      try {
+        const item = JSON.parse(sessionStorage.getItem(key) ?? "null");
+        if (item?.studentId === parsedAttempt.studentId && item?.quizId === parsedAttempt.quizId && item?.hasSubmitted) {
+          count++;
+        }
+      } catch { /* ignore */ }
+    }
+    setTotalAttemptsCount(Math.max(count, 1));
 
     const foundQuiz = mockData.quizzes.find(
       (q) => q.id === parsedAttempt.quizId,
@@ -140,7 +155,10 @@ export default function ResultsPage({ params }: PageProps) {
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-8 text-white text-center">
-            <Trophy size={48} className="mx-auto mb-4" />
+            <Trophy size={48} className="mx-auto mb-3" />
+            <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-bold text-white mb-2">
+              <span>Attempt #{attempt.attemptNumber ?? totalAttemptsCount} of {quiz.config.maxAttempts ?? 1}</span>
+            </div>
             <h1 className="mb-2 font-bold text-3xl">
               {isArabic ? "تم إرسال الاختبار" : "Quiz Submitted"}
             </h1>
@@ -418,11 +436,22 @@ export default function ResultsPage({ params }: PageProps) {
         <div className="flex sm:flex-row flex-col gap-4">
           <Link
             href="/quizzes"
-            className="flex flex-1 justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-6 py-4 rounded-xl font-semibold text-white transition-colors"
+            className="flex flex-1 justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 px-6 py-4 rounded-xl font-semibold text-white transition-colors"
           >
             <Home size={20} />
             {isArabic ? "العودة للاختبارات" : "Back to Quizzes"}
           </Link>
+          {totalAttemptsCount < (quiz.config.maxAttempts ?? 1) && (
+            <Link
+              href={`/quizzes/${quiz.id}`}
+              className="flex flex-1 justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-6 py-4 rounded-xl font-semibold text-white shadow-md transition-colors"
+            >
+              <Repeat size={20} />
+              {isArabic
+                ? `إعادة المحاولة (${(quiz.config.maxAttempts ?? 1) - totalAttemptsCount} متبقية)`
+                : `Retake Assessment (${(quiz.config.maxAttempts ?? 1) - totalAttemptsCount} remaining)`}
+            </Link>
+          )}
         </div>
 
         {/* Quiz Info */}

@@ -7,6 +7,7 @@ import type { Metadata, Viewport } from "next";
 import { StudentProvider } from "@/context/StudentContext";
 import { TeacherProvider } from "@/context/TeacherContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { CommunicationProvider } from "@/context/CommunicationContext";
 
 export const metadata: Metadata = {
   title: "Amman Tutoring Centre | Learning Platform",
@@ -31,9 +32,11 @@ export default function RootLayout({
       </head>
       <body className="bg-slate-50 font-sans antialiased">
         <AuthProvider>
-          <StudentProvider>
-            <TeacherProvider>{children}</TeacherProvider>
-          </StudentProvider>
+          <CommunicationProvider>
+            <StudentProvider>
+              <TeacherProvider>{children}</TeacherProvider>
+            </StudentProvider>
+          </CommunicationProvider>
         </AuthProvider>
       </body>
     </html>

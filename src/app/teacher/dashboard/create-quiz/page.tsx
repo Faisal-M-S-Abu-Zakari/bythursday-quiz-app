@@ -34,8 +34,11 @@ export default function CreateQuizPage() {
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [negativeMarking, setNegativeMarking] = useState(false);
   const [negativeMarksPerQuestion, setNegativeMarksPerQuestion] = useState(1);
-  const [openDate, setOpenDate] = useState("");
-  const [closeDate, setCloseDate] = useState("");
+  const [maxAttempts, setMaxAttempts] = useState<number>(1);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [examDate, setExamDate] = useState(todayStr);
+  const [startTime, setStartTime] = useState("08:00");
+  const [windowHours, setWindowHours] = useState(12);
   const [questions, setQuestions] = useState<QuestionForm[]>([
     {
       id: "1",
@@ -141,8 +144,22 @@ export default function CreateQuizPage() {
       return;
     }
 
-    if (!openDate || !closeDate) {
-      setError("Please set open and close dates");
+    if (!examDate || !startTime) {
+      setError("Please set the exam date and start time");
+      return;
+    }
+
+    if (examDate < todayStr) {
+      setError("Exam window must start today or on a future date (cannot schedule in the past)");
+      return;
+    }
+
+    const openDateTime = new Date(`${examDate}T${startTime}:00`);
+    const closeDateTime = new Date(openDateTime.getTime() + windowHours * 60 * 60 * 1000);
+
+    // Verify same-day close window
+    if (closeDateTime.getDate() !== openDateTime.getDate()) {
+      setError("Exam window must close on the same day (~12 hours max window). Please adjust start time or duration.");
       return;
     }
 
@@ -179,12 +196,13 @@ export default function CreateQuizPage() {
           durationMinutes,
           negativeMarking,
           negativeMarksPerQuestion,
-          singleSubmission: true,
+          singleSubmission: maxAttempts === 1,
+          maxAttempts,
         },
         createdBy: user.id,
         createdAt: new Date(),
-        openDate: new Date(openDate),
-        closeDate: new Date(closeDate),
+        openDate: openDateTime,
+        closeDate: closeDateTime,
         totalPoints,
         isActive: true,
       };
@@ -324,46 +342,183 @@ export default function CreateQuizPage() {
           </div>
 
           {/* Quiz Settings */}
-          <div className="bg-white shadow p-6 rounded-lg">
-            <h2 className="mb-4 font-bold text-gray-900 text-lg">
-              Quiz Settings
+          <div className="bg-white shadow p-6 rounded-2xl border border-slate-200">
+            <h2 className="mb-4 font-bold text-slate-900 text-lg flex items-center justify-between">
+              <span>Quiz Settings & Assessment Rules / إعدادات الاختبار</span>
+              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                Phase 3 Config
+              </span>
             </h2>
+
+            {/* Attempt Limits: 1 to 3 attempts */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label className="block mb-2 font-bold text-slate-800 text-sm">
+                Quiz Attempt Limit / عدد المحاولات المسموحة *
+              </label>
+              <p className="text-xs text-slate-500 mb-3">
+                Configure how many times each student can attempt this assessment (1–3 attempts).
+              </p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {[
+                  {
+                    num: 1,
+                    title: "1 Attempt (Strict)",
+                    titleAr: "محاولة واحدة",
+                    desc: "Official examination mode. Single submission recorded.",
+                  },
+                  {
+                    num: 2,
+                    title: "2 Attempts (Retake)",
+                    titleAr: "محاولتان",
+                    desc: "Permits 1 retake. System calculates highest score.",
+                  },
+                  {
+                    num: 3,
+                    title: "3 Attempts (Mastery)",
+                    titleAr: "ثلاث محاولات",
+                    desc: "Optimal for practice and diagnostic learning.",
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.num}
+                    type="button"
+                    onClick={() => setMaxAttempts(item.num)}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${
+                      maxAttempts === item.num
+                        ? "border-indigo-600 bg-white ring-2 ring-indigo-500/20 shadow-sm"
+                        : "border-slate-200 bg-white/70 hover:bg-white text-slate-600"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-slate-900 text-sm">{item.title}</span>
+                      <span
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          maxAttempts === item.num ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300"
+                        }`}
+                      >
+                        {maxAttempts === item.num && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-indigo-600" lang="ar">
+                      {item.titleAr}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">{item.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Exam Window: Start Today/Future, Same-Day Close (~12 hours) */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label className="block mb-1 font-bold text-slate-800 text-sm">
+                Exam Window / نافذة الاختبار (نفس اليوم ~12 ساعة) *
+              </label>
+              <p className="text-xs text-slate-500 mb-4">
+                Assessment must open today or on a future date and close on the same day (~12 hours).
+              </p>
+
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="examDate" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Exam Date (Today or Future) *
+                  </label>
+                  <input
+                    id="examDate"
+                    type="date"
+                    min={todayStr}
+                    value={examDate}
+                    onChange={(e) => setExamDate(e.target.value)}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="startTime" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Window Opening Time *
+                  </label>
+                  <input
+                    id="startTime"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="windowHours" className="block mb-1.5 font-semibold text-slate-700 text-xs">
+                    Window Duration (Same-Day) *
+                  </label>
+                  <select
+                    id="windowHours"
+                    value={windowHours}
+                    onChange={(e) => setWindowHours(parseInt(e.target.value))}
+                    className="px-3.5 py-2.5 border border-slate-300 focus:border-indigo-500 rounded-xl focus:outline-none w-full text-sm bg-white font-medium"
+                  >
+                    <option value={8}>8 hours (Half-day)</option>
+                    <option value={10}>10 hours (School day)</option>
+                    <option value={12}>12 hours (Standard ~12h Window)</option>
+                    <option value={14}>14 hours (Extended same-day)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Dynamic preview banner */}
+              {examDate && startTime && (
+                <div className="mt-3.5 rounded-xl bg-indigo-50/80 p-3 border border-indigo-200/70 text-xs text-indigo-900 flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="font-bold">Scheduled Window: </span>
+                    <span>
+                      Opens {examDate} at {startTime} &rarr; Closes strictly same-day at{" "}
+                      {new Date(
+                        new Date(`${examDate}T${startTime}:00`).getTime() + windowHours * 60 * 60 * 1000
+                      ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      {" "}({windowHours} hours)
+                    </span>
+                  </div>
+                  <span className="font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-md shadow-2xs">
+                    Same-Day Close &check;
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="gap-6 grid md:grid-cols-2">
               <div>
                 <label
                   htmlFor="duration"
                   className="block mb-2 font-semibold text-gray-700 text-sm"
                 >
-                  Duration (minutes) *
+                  Assessment Time Limit (minutes) *
                 </label>
                 <input
                   id="duration"
                   type="number"
-                  min="1"
+                  min="5"
                   max="180"
                   value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(parseInt(e.target.value))}
+                  onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 20)}
                   className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
                 <label className="block mb-2 font-semibold text-gray-700 text-sm">
-                  Negative Marking
+                  Negative Marking Rules
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer mt-2">
                   <input
                     type="checkbox"
                     checked={negativeMarking}
                     onChange={(e) => setNegativeMarking(e.target.checked)}
-                    className="rounded w-4 h-4"
+                    className="rounded w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-gray-700">Enable negative marking</span>
+                  <span className="text-gray-700 text-sm font-medium">Enable negative marking deduction</span>
                 </label>
               </div>
 
               {negativeMarking && (
-                <div>
+                <div className="md:col-span-2">
                   <label
                     htmlFor="negativeMarks"
                     className="block mb-2 font-semibold text-gray-700 text-sm"
@@ -378,44 +533,12 @@ export default function CreateQuizPage() {
                     step="0.5"
                     value={negativeMarksPerQuestion}
                     onChange={(e) =>
-                      setNegativeMarksPerQuestion(parseFloat(e.target.value))
+                      setNegativeMarksPerQuestion(parseFloat(e.target.value) || 1)
                     }
                     className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                   />
                 </div>
               )}
-
-              <div>
-                <label
-                  htmlFor="openDate"
-                  className="block mb-2 font-semibold text-gray-700 text-sm"
-                >
-                  Open Date *
-                </label>
-                <input
-                  id="openDate"
-                  type="date"
-                  value={openDate}
-                  onChange={(e) => setOpenDate(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="closeDate"
-                  className="block mb-2 font-semibold text-gray-700 text-sm"
-                >
-                  Close Date *
-                </label>
-                <input
-                  id="closeDate"
-                  type="date"
-                  value={closeDate}
-                  onChange={(e) => setCloseDate(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
-                />
-              </div>
             </div>
           </div>
 

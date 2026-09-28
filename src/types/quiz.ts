@@ -29,7 +29,8 @@ export interface QuizConfig {
   durationMinutes: number;
   negativeMarking: boolean;
   negativeMarksPerQuestion: number;
-  singleSubmission: boolean; // Only one attempt allowed
+  singleSubmission: boolean; // Retained for backward compatibility
+  maxAttempts: number; // 1, 2, or 3 attempts allowed
 }
 
 export interface Quiz {
@@ -53,6 +54,7 @@ export interface StudentQuizAttempt {
   id: string;
   studentId: string;
   quizId: string;
+  attemptNumber?: number; // 1, 2, or 3
   startedAt: Date;
   completedAt?: Date;
   answers: {
@@ -79,6 +81,8 @@ export interface QuizResult {
   completedAt: Date;
   timeTakenSeconds: number;
   negativeMarksDeducted: number;
+  attemptNumber?: number;
+  maxAttempts?: number;
 }
 
 export interface QuizAnalytics {
