@@ -2,15 +2,15 @@
  * Utility functions for the quiz platform
  */
 
-import { StudentQuizAttempt, Quiz } from '@/types/quiz';
-import { Student } from '@/types/user';
+import { StudentQuizAttempt, Quiz } from "@/types/quiz";
+import { Student } from "@/types/user";
 
 /**
  * Get student by ID from mock data
  */
 export function getStudentById(studentId: string): Student | undefined {
   // This will be replaced with API call in Phase 3
-  const { mockStudents } = require('@/data/mockData');
+  const { mockStudents } = require("@/data/mockData");
   return mockStudents.find((s: Student) => s.id === studentId);
 }
 
@@ -27,7 +27,7 @@ export function isQuizAvailable(quiz: Quiz): boolean {
  */
 export function getQuizTimeRemaining(openDate: Date, closeDate: Date): number {
   const now = new Date();
-  if (now > closeDate) return 0;
+  if (now < openDate || now > closeDate) return 0;
   return Math.ceil((closeDate.getTime() - now.getTime()) / (1000 * 60));
 }
 
@@ -37,7 +37,7 @@ export function getQuizTimeRemaining(openDate: Date, closeDate: Date): number {
 export function formatTimeRemaining(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 /**
@@ -46,10 +46,10 @@ export function formatTimeRemaining(seconds: number): string {
 export function hasStudentSubmitted(
   studentId: string,
   quizId: string,
-  attempts: StudentQuizAttempt[]
+  attempts: StudentQuizAttempt[],
 ): boolean {
   return attempts.some(
-    (a) => a.studentId === studentId && a.quizId === quizId && a.hasSubmitted
+    (a) => a.studentId === studentId && a.quizId === quizId && a.hasSubmitted,
   );
 }
 
@@ -59,7 +59,7 @@ export function hasStudentSubmitted(
 export function getStudentQuizAttempt(
   studentId: string,
   quizId: string,
-  attempts: StudentQuizAttempt[]
+  attempts: StudentQuizAttempt[],
 ): StudentQuizAttempt | undefined {
   return attempts.find((a) => a.studentId === studentId && a.quizId === quizId);
 }
@@ -67,34 +67,34 @@ export function getStudentQuizAttempt(
 /**
  * Determine text direction based on language
  */
-export function getTextDirection(language: 'ar' | 'en'): 'rtl' | 'ltr' {
-  return language === 'ar' ? 'rtl' : 'ltr';
+export function getTextDirection(language: "ar" | "en"): "rtl" | "ltr" {
+  return language === "ar" ? "rtl" : "ltr";
 }
 
 /**
  * Get CSS classes for RTL support
  */
-export function getRTLClasses(language: 'ar' | 'en'): {
+export function getRTLClasses(language: "ar" | "en"): {
   textAlign: string;
   marginLeft?: string;
   marginRight?: string;
   paddingLeft?: string;
   paddingRight?: string;
 } {
-  if (language === 'ar') {
+  if (language === "ar") {
     return {
-      textAlign: 'text-right',
-      marginRight: 'mr-4',
+      textAlign: "text-right",
+      marginRight: "mr-4",
       marginLeft: undefined,
-      paddingRight: 'pr-4',
+      paddingRight: "pr-4",
       paddingLeft: undefined,
     };
   }
   return {
-    textAlign: 'text-left',
-    marginLeft: 'ml-4',
+    textAlign: "text-left",
+    marginLeft: "ml-4",
     marginRight: undefined,
-    paddingLeft: 'pl-4',
+    paddingLeft: "pl-4",
     paddingRight: undefined,
   };
 }

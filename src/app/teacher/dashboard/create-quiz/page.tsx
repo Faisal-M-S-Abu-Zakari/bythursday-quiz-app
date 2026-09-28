@@ -2,14 +2,15 @@
  * Create Quiz Form - Allows teachers to create new quizzes
  */
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTeacher } from '@/context/TeacherContext';
-import { Quiz, Question } from '@/types/quiz';
-import { ClassCode } from '@/types/user';
-import { Plus, Trash2, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { useTeacher } from "@/context/TeacherContext";
+import { Quiz, Question } from "@/types/quiz";
+import { ClassCode } from "@/types/user";
+import { Plus, Trash2, ChevronLeft } from "lucide-react";
+import Link from "next/link";
+import { LMSHeader } from "@/components/LMSHeader";
 
 interface QuestionForm {
   id: string;
@@ -20,49 +21,51 @@ interface QuestionForm {
 
 export default function CreateQuizPage() {
   const { currentTeacher, addQuiz } = useTeacher();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('');
-  const [language, setLanguage] = useState<'ar' | 'en'>('en');
-  const [classCode, setClassCode] = useState<ClassCode>('10A');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [subject, setSubject] = useState("");
+  const [language, setLanguage] = useState<"ar" | "en">("en");
+  const [classCode, setClassCode] = useState<ClassCode>("10A");
   const [durationMinutes, setDurationMinutes] = useState(20);
   const [negativeMarking, setNegativeMarking] = useState(false);
   const [negativeMarksPerQuestion, setNegativeMarksPerQuestion] = useState(1);
-  const [openDate, setOpenDate] = useState('');
-  const [closeDate, setCloseDate] = useState('');
+  const [openDate, setOpenDate] = useState("");
+  const [closeDate, setCloseDate] = useState("");
   const [questions, setQuestions] = useState<QuestionForm[]>([
     {
-      id: '1',
-      text: '',
+      id: "1",
+      text: "",
       points: 5,
       options: [
-        { id: '1a', text: '', isCorrect: true },
-        { id: '1b', text: '', isCorrect: false },
-        { id: '1c', text: '', isCorrect: false },
-        { id: '1d', text: '', isCorrect: false },
+        { id: "1a", text: "", isCorrect: true },
+        { id: "1b", text: "", isCorrect: false },
+        { id: "1c", text: "", isCorrect: false },
+        { id: "1d", text: "", isCorrect: false },
       ],
     },
   ]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   if (!currentTeacher) {
     return null;
   }
 
   const addQuestion = () => {
-    const newId = String(Math.max(...questions.map((q) => parseInt(q.id)), 0) + 1);
+    const newId = String(
+      Math.max(...questions.map((q) => parseInt(q.id)), 0) + 1,
+    );
     setQuestions([
       ...questions,
       {
         id: newId,
-        text: '',
+        text: "",
         points: 5,
         options: [
-          { id: `${newId}a`, text: '', isCorrect: true },
-          { id: `${newId}b`, text: '', isCorrect: false },
-          { id: `${newId}c`, text: '', isCorrect: false },
-          { id: `${newId}d`, text: '', isCorrect: false },
+          { id: `${newId}a`, text: "", isCorrect: true },
+          { id: `${newId}b`, text: "", isCorrect: false },
+          { id: `${newId}c`, text: "", isCorrect: false },
+          { id: `${newId}d`, text: "", isCorrect: false },
         ],
       },
     ]);
@@ -76,13 +79,16 @@ export default function CreateQuizPage() {
 
   const updateQuestion = (id: string, field: string, value: any) => {
     setQuestions(
-      questions.map((q) =>
-        q.id === id ? { ...q, [field]: value } : q
-      )
+      questions.map((q) => (q.id === id ? { ...q, [field]: value } : q)),
     );
   };
 
-  const updateOption = (questionId: string, optionId: string, field: string, value: any) => {
+  const updateOption = (
+    questionId: string,
+    optionId: string,
+    field: string,
+    value: any,
+  ) => {
     setQuestions(
       questions.map((q) =>
         q.id === questionId
@@ -91,43 +97,43 @@ export default function CreateQuizPage() {
               options: q.options.map((o) =>
                 o.id === optionId
                   ? { ...o, [field]: value }
-                  : field === 'isCorrect' && value
-                  ? { ...o, isCorrect: false }
-                  : o
+                  : field === "isCorrect" && value
+                    ? { ...o, isCorrect: false }
+                    : o,
               ),
             }
-          : q
-      )
+          : q,
+      ),
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validation
     if (!title || !description || !subject) {
-      setError('Please fill in all required fields');
+      setError("Please fill in all required fields");
       return;
     }
 
     if (questions.length < 1) {
-      setError('Quiz must have at least 1 question');
+      setError("Quiz must have at least 1 question");
       return;
     }
 
     if (questions.some((q) => !q.text || q.options.some((o) => !o.text))) {
-      setError('All questions and options must have text');
+      setError("All questions and options must have text");
       return;
     }
 
     if (questions.some((q) => !q.options.some((o) => o.isCorrect))) {
-      setError('Each question must have at least one correct answer');
+      setError("Each question must have at least one correct answer");
       return;
     }
 
     if (!openDate || !closeDate) {
-      setError('Please set open and close dates');
+      setError("Please set open and close dates");
       return;
     }
 
@@ -139,13 +145,13 @@ export default function CreateQuizPage() {
         id: q.id,
         text: q.text,
         language,
-        type: 'multiple_choice',
+        type: "multiple_choice",
         options: q.options.map((o) => ({
           id: o.id,
           text: o.text,
           isCorrect: o.isCorrect,
         })),
-        correctOptionId: q.options.find((o) => o.isCorrect)?.id || '',
+        correctOptionId: q.options.find((o) => o.isCorrect)?.id || "",
         points: q.points,
         negativeMarks: negativeMarking ? negativeMarksPerQuestion : undefined,
       }));
@@ -175,46 +181,56 @@ export default function CreateQuizPage() {
       };
 
       addQuiz(newQuiz);
-      window.location.href = '/teacher/dashboard';
+      window.location.href = "/teacher/dashboard";
     } catch (err) {
-      setError('Failed to create quiz. Please try again.');
+      setError("Failed to create quiz. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
+      <LMSHeader
+        role="teacher"
+        name={currentTeacher.name}
+        detail="Create an assessment"
+      />
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <header className="top-0 z-50 sticky bg-white border-gray-200 border-b">
+        <div className="mx-auto px-4 py-4 max-w-4xl">
           <Link
             href="/teacher/dashboard"
-            className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2 mb-4"
+            className="flex items-center gap-2 mb-4 font-medium text-indigo-600 hover:text-indigo-700"
           >
             <ChevronLeft size={20} />
             Back to Dashboard
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Quiz</h1>
+          <h1 className="font-bold text-gray-900 text-2xl">Create New Quiz</h1>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="mx-auto px-4 py-8 max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            <div className="bg-red-50 p-4 border border-red-200 rounded-lg text-red-700">
               {error}
             </div>
           )}
 
           {/* Basic Information */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Basic Information</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white shadow p-6 rounded-lg">
+            <h2 className="mb-4 font-bold text-gray-900 text-lg">
+              Basic Information
+            </h2>
+            <div className="gap-6 grid md:grid-cols-2">
               <div>
-                <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="title"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Quiz Title *
                 </label>
                 <input
@@ -223,12 +239,15 @@ export default function CreateQuizPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g., Chapter 5 Assessment"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="subject"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Subject *
                 </label>
                 <input
@@ -237,12 +256,15 @@ export default function CreateQuizPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g., Arabic Literature"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="description"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Description *
                 </label>
                 <textarea
@@ -251,19 +273,22 @@ export default function CreateQuizPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of the quiz"
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="classCode" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="classCode"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Class *
                 </label>
                 <select
                   id="classCode"
                   value={classCode}
                   onChange={(e) => setClassCode(e.target.value as ClassCode)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 >
                   <option value="10A">10A</option>
                   <option value="10B">10B</option>
@@ -272,14 +297,17 @@ export default function CreateQuizPage() {
               </div>
 
               <div>
-                <label htmlFor="language" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="language"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Language *
                 </label>
                 <select
                   id="language"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as 'ar' | 'en')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  onChange={(e) => setLanguage(e.target.value as "ar" | "en")}
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 >
                   <option value="en">English</option>
                   <option value="ar">Arabic</option>
@@ -289,11 +317,16 @@ export default function CreateQuizPage() {
           </div>
 
           {/* Quiz Settings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Quiz Settings</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white shadow p-6 rounded-lg">
+            <h2 className="mb-4 font-bold text-gray-900 text-lg">
+              Quiz Settings
+            </h2>
+            <div className="gap-6 grid md:grid-cols-2">
               <div>
-                <label htmlFor="duration" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="duration"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Duration (minutes) *
                 </label>
                 <input
@@ -303,12 +336,12 @@ export default function CreateQuizPage() {
                   max="180"
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block mb-2 font-semibold text-gray-700 text-sm">
                   Negative Marking
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -316,7 +349,7 @@ export default function CreateQuizPage() {
                     type="checkbox"
                     checked={negativeMarking}
                     onChange={(e) => setNegativeMarking(e.target.checked)}
-                    className="w-4 h-4 rounded"
+                    className="rounded w-4 h-4"
                   />
                   <span className="text-gray-700">Enable negative marking</span>
                 </label>
@@ -324,7 +357,10 @@ export default function CreateQuizPage() {
 
               {negativeMarking && (
                 <div>
-                  <label htmlFor="negativeMarks" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label
+                    htmlFor="negativeMarks"
+                    className="block mb-2 font-semibold text-gray-700 text-sm"
+                  >
                     Negative Marks Per Wrong Answer
                   </label>
                   <input
@@ -334,14 +370,19 @@ export default function CreateQuizPage() {
                     max="10"
                     step="0.5"
                     value={negativeMarksPerQuestion}
-                    onChange={(e) => setNegativeMarksPerQuestion(parseFloat(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                    onChange={(e) =>
+                      setNegativeMarksPerQuestion(parseFloat(e.target.value))
+                    }
+                    className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                   />
                 </div>
               )}
 
               <div>
-                <label htmlFor="openDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="openDate"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Open Date *
                 </label>
                 <input
@@ -349,12 +390,15 @@ export default function CreateQuizPage() {
                   type="date"
                   value={openDate}
                   onChange={(e) => setOpenDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
 
               <div>
-                <label htmlFor="closeDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="closeDate"
+                  className="block mb-2 font-semibold text-gray-700 text-sm"
+                >
                   Close Date *
                 </label>
                 <input
@@ -362,20 +406,22 @@ export default function CreateQuizPage() {
                   type="date"
                   value={closeDate}
                   onChange={(e) => setCloseDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="px-4 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Questions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Questions ({questions.length})</h2>
+          <div className="bg-white shadow p-6 rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-gray-900 text-lg">
+                Questions ({questions.length})
+              </h2>
               <button
                 type="button"
                 onClick={addQuestion}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg font-medium text-white transition-colors"
               >
                 <Plus size={18} />
                 Add Question
@@ -384,8 +430,11 @@ export default function CreateQuizPage() {
 
             <div className="space-y-6">
               {questions.map((question, idx) => (
-                <div key={question.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between mb-4">
+                <div
+                  key={question.id}
+                  className="bg-gray-50 p-4 border border-gray-200 rounded-lg"
+                >
+                  <div className="flex justify-between items-center mb-4">
                     <h3 className="font-semibold text-gray-900">
                       Question {idx + 1}
                     </h3>
@@ -393,31 +442,31 @@ export default function CreateQuizPage() {
                       <button
                         type="button"
                         onClick={() => removeQuestion(question.id)}
-                        className="text-red-600 hover:text-red-700 p-2"
+                        className="p-2 text-red-600 hover:text-red-700"
                       >
                         <Trash2 size={18} />
                       </button>
                     )}
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                  <div className="gap-4 grid md:grid-cols-2 mb-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 font-semibold text-gray-700 text-sm">
                         Question Text *
                       </label>
                       <textarea
                         value={question.text}
                         onChange={(e) =>
-                          updateQuestion(question.id, 'text', e.target.value)
+                          updateQuestion(question.id, "text", e.target.value)
                         }
                         placeholder="Enter question text"
                         rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                        className="px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 font-semibold text-gray-700 text-sm">
                         Points *
                       </label>
                       <input
@@ -426,16 +475,22 @@ export default function CreateQuizPage() {
                         max="100"
                         value={question.points}
                         onChange={(e) =>
-                          updateQuestion(question.id, 'points', parseInt(e.target.value))
+                          updateQuestion(
+                            question.id,
+                            "points",
+                            parseInt(e.target.value),
+                          )
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                        className="px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none w-full"
                       />
                     </div>
                   </div>
 
                   {/* Options */}
                   <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-700">Options *</h4>
+                    <h4 className="font-semibold text-gray-700 text-sm">
+                      Options *
+                    </h4>
                     {question.options.map((option) => (
                       <div key={option.id} className="flex items-center gap-3">
                         <input
@@ -443,7 +498,12 @@ export default function CreateQuizPage() {
                           name={`correct_${question.id}`}
                           checked={option.isCorrect}
                           onChange={(e) =>
-                            updateOption(question.id, option.id, 'isCorrect', e.target.checked)
+                            updateOption(
+                              question.id,
+                              option.id,
+                              "isCorrect",
+                              e.target.checked,
+                            )
                           }
                           className="w-4 h-4"
                         />
@@ -451,10 +511,15 @@ export default function CreateQuizPage() {
                           type="text"
                           value={option.text}
                           onChange={(e) =>
-                            updateOption(question.id, option.id, 'text', e.target.value)
+                            updateOption(
+                              question.id,
+                              option.id,
+                              "text",
+                              e.target.value,
+                            )
                           }
                           placeholder="Enter option text"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 focus:border-indigo-500 rounded-lg focus:outline-none"
                         />
                       </div>
                     ))}
@@ -468,16 +533,16 @@ export default function CreateQuizPage() {
           <div className="flex gap-4">
             <Link
               href="/teacher/dashboard"
-              className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors text-center"
+              className="flex-1 hover:bg-gray-50 px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 text-center transition-colors"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-colors"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 px-6 py-3 rounded-lg font-semibold text-white transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Quiz'}
+              {loading ? "Creating..." : "Create Quiz"}
             </button>
           </div>
         </form>

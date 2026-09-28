@@ -2,30 +2,35 @@
  * Quiz Taking Interface - Main quiz experience with timer, questions, and RTL support
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useStudent } from '@/context/StudentContext';
-import { mockData } from '@/data/mockData';
-import { QuizTimer } from '@/components/QuizTimer';
-import { generateAttemptId, hasStudentSubmitted, getTextDirection } from '@/lib/utils';
-import { calculateScore } from '@/lib/scoring';
-import { StudentQuizAttempt, Quiz } from '@/types/quiz';
-import { ChevronLeft, ChevronRight, Send } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useStudent } from "@/context/StudentContext";
+import { mockData } from "@/data/mockData";
+import { QuizTimer } from "@/components/QuizTimer";
+import {
+  generateAttemptId,
+  hasStudentSubmitted,
+  getTextDirection,
+} from "@/lib/utils";
+import { calculateScore } from "@/lib/scoring";
+import { StudentQuizAttempt, Quiz } from "@/types/quiz";
+import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import Link from "next/link";
+import { LMSHeader } from "@/components/LMSHeader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function QuizPage({ params }: PageProps) {
-  const { currentStudent } = useStudent();
-  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
+  const { currentStudent, isStudentReady } = useStudent();
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+    null,
+  );
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
-  const [timeExpired, setTimeExpired] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Resolve params
@@ -35,11 +40,11 @@ export default function QuizPage({ params }: PageProps) {
 
   // Load quiz
   useEffect(() => {
-    if (!resolvedParams || !currentStudent) return;
+    if (!resolvedParams || !isStudentReady || !currentStudent) return;
 
     const foundQuiz = mockData.quizzes.find((q) => q.id === resolvedParams.id);
     if (!foundQuiz) {
-      window.location.href = '/quizzes';
+      window.location.href = "/quizzes";
       return;
     }
 
@@ -51,14 +56,14 @@ export default function QuizPage({ params }: PageProps) {
 
     setQuiz(foundQuiz);
     setLoading(false);
-  }, [resolvedParams, currentStudent]);
+  }, [resolvedParams, currentStudent, isStudentReady]);
 
-  if (!currentStudent || !resolvedParams || loading) {
+  if (!isStudentReady || !currentStudent || !resolvedParams || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex justify-center items-center bg-gray-50 min-h-screen">
         <div className="text-center">
-          <div className="inline-block animate-spin mb-4">
-            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+          <div className="inline-block mb-4 animate-spin">
+            <div className="border-4 border-indigo-600 border-t-transparent rounded-full w-8 h-8"></div>
           </div>
           <p className="text-gray-600">Loading quiz...</p>
         </div>
@@ -72,7 +77,7 @@ export default function QuizPage({ params }: PageProps) {
 
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const textDir = getTextDirection(quiz.language);
-  const isArabic = quiz.language === 'ar';
+  const isArabic = quiz.language === "ar";
 
   const handleAnswerSelect = (optionId: string) => {
     setAnswers({
@@ -82,7 +87,6 @@ export default function QuizPage({ params }: PageProps) {
   };
 
   const handleTimeExpired = () => {
-    setTimeExpired(true);
     handleSubmit();
   };
 
@@ -95,13 +99,13 @@ export default function QuizPage({ params }: PageProps) {
       completedAt: new Date(),
       answers: quiz.questions.map((q) => ({
         questionId: q.id,
-        selectedOptionId: answers[q.id] || '',
+        selectedOptionId: answers[q.id] || "",
         timeSpentSeconds: 0,
       })),
       hasSubmitted: true,
     };
 
-    const { score, percentage, negativeMarksDeducted } = calculateScore(attempt, quiz);
+    const { score, percentage } = calculateScore(attempt, quiz);
     attempt.score = score;
     attempt.percentage = percentage;
 
@@ -115,25 +119,34 @@ export default function QuizPage({ params }: PageProps) {
   const allAnswered = quiz.questions.every((q) => answers[q.id]);
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50"
-      dir={textDir}
-    >
+    <div className="bg-slate-50/80 min-h-screen" dir={textDir}>
       {/* Header with Timer */}
-      <header className="sticky top-0 z-40 bg-white border-b-2 border-indigo-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
+      <div className="top-0 z-40 sticky">
+        <LMSHeader
+          role="student"
+          name={currentStudent.name}
+          detail={`Class ${currentStudent.classCode}`}
+        />
+        <div className="bg-white/95 shadow-sm backdrop-blur-xl border-slate-200 border-b">
+          <div className="flex items-center gap-3 mx-auto px-4 sm:px-6 py-3 max-w-4xl">
             <Link
               href="/quizzes"
-              className="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2"
+              aria-label={isArabic ? "العودة" : "Back"}
+              className="place-items-center grid bg-slate-100 hover:bg-indigo-50 rounded-xl w-10 h-10 text-slate-600 hover:text-indigo-700 transition shrink-0"
             >
-              {isArabic ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-              {isArabic ? 'العودة' : 'Back'}
+              {isArabic ? (
+                <ChevronRight size={20} />
+              ) : (
+                <ChevronLeft size={20} />
+              )}
             </Link>
-            <div className="flex-1 text-center">
-              <h1 className="font-bold text-gray-900">{quiz.title}</h1>
-              <p className="text-sm text-gray-500">
-                Question {currentQuestionIndex + 1} of {quiz.questions.length}
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-slate-900 text-sm sm:text-base truncate">
+                {quiz.title}
+              </h1>
+              <p className="text-slate-500 text-xs">
+                {isArabic ? "السؤال" : "Question"} {currentQuestionIndex + 1} of{" "}
+                {quiz.questions.length}
               </p>
             </div>
             <QuizTimer
@@ -142,35 +155,38 @@ export default function QuizPage({ params }: PageProps) {
               language={quiz.language}
             />
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Question Progress Bar */}
-          <div className="h-2 bg-gray-200">
+          <div className="bg-slate-100 h-1">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-300"
+              className="bg-indigo-600 rounded-r-full h-full transition-all duration-500"
               style={{
                 width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%`,
               }}
-            ></div>
+            />
           </div>
+        </div>
+      </div>
 
+      {/* Main Content */}
+      <main className="mx-auto px-4 sm:px-6 py-6 pb-24 max-w-4xl">
+        <div className="lms-card">
           {/* Question Content */}
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-8">
             {/* Question Text */}
-            <div className={`mb-8 ${isArabic ? 'text-right' : 'text-left'}`}>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+            <div className={`mb-8 ${isArabic ? "text-right" : "text-left"}`}>
+              <p className="mb-3 font-bold text-indigo-600 text-xs uppercase tracking-[0.18em]">
+                {isArabic
+                  ? `السؤال ${currentQuestionIndex + 1}`
+                  : `Question ${currentQuestionIndex + 1}`}
+              </p>
+              <h2 className="mb-4 font-bold text-slate-900 text-2xl sm:text-3xl leading-relaxed tracking-tight">
                 {currentQuestion.text}
               </h2>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full font-medium">
+              <div className="flex items-center gap-4 text-gray-600 text-sm">
+                <span className="bg-indigo-100 px-3 py-1 rounded-full font-medium text-indigo-700">
                   {currentQuestion.points} points
                 </span>
                 {currentQuestion.negativeMarks && (
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full font-medium">
+                  <span className="bg-orange-100 px-3 py-1 rounded-full font-medium text-orange-700">
                     -{currentQuestion.negativeMarks} wrong
                   </span>
                 )}
@@ -183,10 +199,10 @@ export default function QuizPage({ params }: PageProps) {
                 <button
                   key={option.id}
                   onClick={() => handleAnswerSelect(option.id)}
-                  className={`w-full p-4 rounded-lg border-2 transition-all text-left sm:text-base text-sm ${
+                  className={`quiz-option w-full rounded-xl border-2 p-4 text-left text-sm transition-all sm:p-5 sm:text-base ${
                     answers[currentQuestion.id] === option.id
-                      ? 'border-indigo-500 bg-indigo-50'
-                      : 'border-gray-200 bg-white hover:border-indigo-300'
+                      ? "border-indigo-500 bg-indigo-50"
+                      : "border-gray-200 bg-white hover:border-indigo-300"
                   }`}
                   dir={textDir}
                 >
@@ -194,62 +210,79 @@ export default function QuizPage({ params }: PageProps) {
                     <span
                       className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                         answers[currentQuestion.id] === option.id
-                          ? 'border-indigo-500 bg-indigo-500'
-                          : 'border-gray-300'
+                          ? "border-indigo-500 bg-indigo-500"
+                          : "border-gray-300"
                       }`}
                     >
                       {answers[currentQuestion.id] === option.id && (
-                        <span className="w-2 h-2 bg-white rounded-full"></span>
+                        <span className="bg-white rounded-full w-2 h-2"></span>
                       )}
                     </span>
-                    <span className="font-medium text-gray-900">{option.text}</span>
+                    <span className="font-medium text-gray-900">
+                      {option.text}
+                    </span>
                   </span>
                 </button>
               ))}
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between gap-4 pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center gap-3 quiz-action-bar">
               <button
-                onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                onClick={() =>
+                  setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))
+                }
                 disabled={!canGoPrev}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                className={`flex min-h-12 items-center gap-2 rounded-xl px-4 py-3 font-semibold transition-all sm:px-6 ${
                   canGoPrev
-                    ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                    ? "bg-gray-100 text-gray-900 hover:bg-gray-200"
+                    : "bg-gray-50 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {isArabic ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-                {isArabic ? 'السابق' : 'Previous'}
+                {isArabic ? (
+                  <ChevronRight size={20} />
+                ) : (
+                  <ChevronLeft size={20} />
+                )}
+                {isArabic ? "السابق" : "Previous"}
               </button>
 
               {currentQuestionIndex === quiz.questions.length - 1 ? (
                 <button
                   onClick={handleSubmit}
                   disabled={!allAnswered}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                  className={`flex min-h-12 items-center gap-2 rounded-xl px-4 py-3 font-semibold transition-all sm:px-6 ${
                     allAnswered
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
                   }`}
                 >
                   <Send size={20} />
-                  {isArabic ? 'إرسال' : 'Submit'}
+                  {isArabic ? "إرسال" : "Submit"}
                 </button>
               ) : (
                 <button
                   onClick={() =>
-                    setCurrentQuestionIndex(Math.min(quiz.questions.length - 1, currentQuestionIndex + 1))
+                    setCurrentQuestionIndex(
+                      Math.min(
+                        quiz.questions.length - 1,
+                        currentQuestionIndex + 1,
+                      ),
+                    )
                   }
                   disabled={!canGoNext}
                   className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                     canGoNext
-                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                      : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-50 text-gray-400 cursor-not-allowed"
                   }`}
                 >
-                  {isArabic ? 'التالي' : 'Next'}
-                  {isArabic ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                  {isArabic ? "التالي" : "Next"}
+                  {isArabic ? (
+                    <ChevronLeft size={20} />
+                  ) : (
+                    <ChevronRight size={20} />
+                  )}
                 </button>
               )}
             </div>
@@ -257,19 +290,19 @@ export default function QuizPage({ params }: PageProps) {
         </div>
 
         {/* Question Indicator - Mobile */}
-        <div className="mt-6 md:hidden">
-          <div className="bg-white rounded-lg p-4">
-            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+        <div className="md:hidden mt-6">
+          <div className="bg-white p-4 rounded-lg">
+            <div className="gap-2 grid grid-cols-6 sm:grid-cols-8">
               {quiz.questions.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentQuestionIndex(idx)}
                   className={`aspect-square rounded-lg font-semibold text-sm transition-all ${
                     idx === currentQuestionIndex
-                      ? 'bg-indigo-600 text-white'
+                      ? "bg-indigo-600 text-white"
                       : answers[quiz.questions[idx].id]
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   {idx + 1}
