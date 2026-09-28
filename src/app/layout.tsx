@@ -6,6 +6,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { StudentProvider } from "@/context/StudentContext";
 import { TeacherProvider } from "@/context/TeacherContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "Amman Tutoring Centre | Learning Platform",
@@ -24,14 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ar" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
       </head>
       <body className="bg-slate-50 font-sans antialiased">
-        <StudentProvider>
-          <TeacherProvider>{children}</TeacherProvider>
-        </StudentProvider>
+        <AuthProvider>
+          <StudentProvider>
+            <TeacherProvider>{children}</TeacherProvider>
+          </StudentProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -13,6 +13,7 @@ import {
 } from "react";
 import { Teacher } from "@/types/user";
 import { Quiz, StudentQuizAttempt } from "@/types/quiz";
+import { useAuth } from "@/context/AuthContext";
 
 interface TeacherContextType {
   currentTeacher: Teacher | null;
@@ -28,6 +29,7 @@ interface TeacherContextType {
 const TeacherContext = createContext<TeacherContextType | undefined>(undefined);
 
 export function TeacherProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthReady, setUser, logout: logoutAuth } = useAuth();
   const [currentTeacher, setCurrentTeacherState] = useState<Teacher | null>(
     null,
   );
@@ -36,6 +38,11 @@ export function TeacherProvider({ children }: { children: ReactNode }) {
   const [allAttempts, setAllAttempts] = useState<StudentQuizAttempt[]>([]);
 
   useEffect(() => {
+    if (isAuthReady && user?.role === "teacher") {
+      setCurrentTeacherState(user);
+      setIsTeacherReady(true);
+      return;
+    }
     try {
       const storedTeacher = window.sessionStorage.getItem("currentTeacher");
       if (storedTeacher) {
@@ -46,10 +53,11 @@ export function TeacherProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsTeacherReady(true);
     }
-  }, []);
+  }, [isAuthReady, user]);
 
   const setCurrentTeacher = (teacher: Teacher | null) => {
     setCurrentTeacherState(teacher);
+    if (teacher) setUser(teacher);
     if (typeof window !== "undefined") {
       if (teacher) {
         window.sessionStorage.setItem(
@@ -72,6 +80,7 @@ export function TeacherProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setCurrentTeacher(null);
+    logoutAuth();
   };
 
   return (

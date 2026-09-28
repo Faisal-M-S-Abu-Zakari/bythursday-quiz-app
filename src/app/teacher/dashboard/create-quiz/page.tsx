@@ -4,8 +4,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTeacher } from "@/context/TeacherContext";
+import { useAuth } from "@/context/AuthContext";
 import { Quiz, Question } from "@/types/quiz";
 import { ClassCode } from "@/types/user";
 import { Plus, Trash2, ChevronLeft } from "lucide-react";
@@ -20,7 +22,10 @@ interface QuestionForm {
 }
 
 export default function CreateQuizPage() {
-  const { currentTeacher, addQuiz } = useTeacher();
+  const router = useRouter();
+  const { user, isAuthReady } = useAuth();
+  const { addQuiz } = useTeacher();
+  const canCreateQuiz = user?.role === "teacher" || user?.role === "admin";
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [subject, setSubject] = useState("");
@@ -47,7 +52,11 @@ export default function CreateQuizPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  if (!currentTeacher) {
+  useEffect(() => {
+    if (isAuthReady && !canCreateQuiz) router.replace("/login");
+  }, [canCreateQuiz, isAuthReady, router]);
+
+  if (!isAuthReady || !canCreateQuiz || !user) {
     return null;
   }
 
@@ -172,7 +181,7 @@ export default function CreateQuizPage() {
           negativeMarksPerQuestion,
           singleSubmission: true,
         },
-        createdBy: currentTeacher.id,
+        createdBy: user.id,
         createdAt: new Date(),
         openDate: new Date(openDate),
         closeDate: new Date(closeDate),
@@ -181,7 +190,9 @@ export default function CreateQuizPage() {
       };
 
       addQuiz(newQuiz);
-      window.location.href = "/teacher/dashboard";
+      router.push(
+        user.role === "admin" ? "/admin/dashboard" : "/teacher/dashboard",
+      );
     } catch (err) {
       setError("Failed to create quiz. Please try again.");
     } finally {
@@ -191,11 +202,7 @@ export default function CreateQuizPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <LMSHeader
-        role="teacher"
-        name={currentTeacher.name}
-        detail="Create an assessment"
-      />
+      <LMSHeader name={user.name} detail="Create an assessment" />
       {/* Header */}
       <header className="top-0 z-50 sticky bg-white border-gray-200 border-b">
         <div className="mx-auto px-4 py-4 max-w-4xl">

@@ -12,6 +12,7 @@ import {
   ReactNode,
 } from "react";
 import { Student } from "@/types/user";
+import { useAuth } from "@/context/AuthContext";
 
 interface StudentContextType {
   currentStudent: Student | null;
@@ -23,12 +24,18 @@ interface StudentContextType {
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 export function StudentProvider({ children }: { children: ReactNode }) {
+  const { user, isAuthReady, setUser, logout: logoutAuth } = useAuth();
   const [currentStudent, setCurrentStudentState] = useState<Student | null>(
     null,
   );
   const [isStudentReady, setIsStudentReady] = useState(false);
 
   useEffect(() => {
+    if (isAuthReady && user?.role === "student") {
+      setCurrentStudentState(user);
+      setIsStudentReady(true);
+      return;
+    }
     try {
       const storedStudent = window.sessionStorage.getItem("currentStudent");
       if (storedStudent) {
@@ -39,10 +46,11 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsStudentReady(true);
     }
-  }, []);
+  }, [isAuthReady, user]);
 
   const setCurrentStudent = (student: Student | null) => {
     setCurrentStudentState(student);
+    if (student) setUser(student);
     if (typeof window !== "undefined") {
       if (student) {
         window.sessionStorage.setItem(
@@ -57,6 +65,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setCurrentStudent(null);
+    logoutAuth();
   };
 
   return (

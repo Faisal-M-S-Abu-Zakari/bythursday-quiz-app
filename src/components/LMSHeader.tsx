@@ -1,46 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import {
-  BookOpen,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { useState } from "react";
+import { Bell, BookOpen, LogOut, Mail } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { getDashboardPath } from "@/lib/auth";
 
 interface LMSHeaderProps {
-  role: "student" | "teacher" | "nour";
+  role?: "student" | "teacher" | "admin" | "nour";
   name?: string;
   detail?: string;
   onLogout?: () => void;
 }
 
-const roles = [
-  { id: "student", label: "Student", href: "/", icon: GraduationCap },
-  {
-    id: "teacher",
-    label: "Teacher",
-    href: "/teacher/login",
-    icon: LayoutDashboard,
-  },
-  { id: "nour", label: "Nour", href: "/teacher/login", icon: Sparkles },
-] as const;
+export function LMSHeader({ name, detail, onLogout }: LMSHeaderProps) {
+  const { user, logout } = useAuth();
+  const [openMenu, setOpenMenu] = useState<"notifications" | "messages" | null>(
+    null,
+  );
+  const activeName = name ?? user?.name;
+  const activeDetail =
+    detail ??
+    (user?.role === "student"
+      ? `Class ${user.classCode}`
+      : user?.role === "teacher"
+        ? user.subjects.join(" · ")
+        : user?.role === "admin"
+          ? "Platform administrator"
+          : "");
 
-export function LMSHeader({ role, name, detail, onLogout }: LMSHeaderProps) {
+  const handleLogout = () => {
+    logout();
+    onLogout?.();
+    window.location.assign("/login");
+  };
+
   return (
     <header className="lms-topbar">
-      <div className="flex justify-between items-center gap-4 mx-auto px-4 sm:px-6 py-3 max-w-7xl">
+      <div className="flex justify-between items-center gap-3 mx-auto px-4 sm:px-6 py-3 max-w-7xl">
         <Link
-          href={role === "student" ? "/quizzes" : "/teacher/dashboard"}
+          href={user ? getDashboardPath(user) : "/"}
           className="flex items-center gap-3 min-w-0"
         >
-          <span className="place-items-center grid bg-indigo-600 shadow-indigo-200 shadow-lg rounded-2xl w-11 h-11 text-white shrink-0">
+          <span className="place-items-center grid bg-gradient-to-br from-indigo-700 to-blue-600 shadow-indigo-200 shadow-md rounded-2xl w-11 h-11 text-white shrink-0">
             <BookOpen size={22} strokeWidth={2.3} />
           </span>
           <span className="min-w-0">
             <span className="block font-bold text-slate-900 text-sm sm:text-base truncate tracking-tight">
-              Amman Tutoring Centre
+              Amman Learning Centre
             </span>
             <span
               className="block font-medium text-slate-500 text-xs truncate"
@@ -52,64 +59,96 @@ export function LMSHeader({ role, name, detail, onLogout }: LMSHeaderProps) {
           </span>
         </Link>
 
-        <nav
-          aria-label="Switch role"
-          className="hidden sm:flex items-center bg-slate-100 p-1 rounded-xl"
-        >
-          {roles.map(({ id, label, href, icon: Icon }) => (
-            <Link
-              key={id}
-              href={href}
-              aria-current={id === role ? "page" : undefined}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                id === role
-                  ? "bg-white text-indigo-700 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              <Icon size={14} />
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {name && (
-            <div className="hidden sm:block text-right">
-              <p className="font-semibold text-slate-800 text-sm">{name}</p>
-              {detail && <p className="text-slate-500 text-xs">{detail}</p>}
-            </div>
-          )}
-          {name && (
-            <span className="place-items-center grid bg-indigo-100 rounded-full ring-2 ring-white w-10 h-10 font-bold text-indigo-700 text-sm">
-              {name.trim().charAt(0)}
-            </span>
-          )}
-          {onLogout && (
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="relative">
             <button
-              onClick={onLogout}
-              aria-label="Log out"
-              className="place-items-center grid hover:bg-rose-50 rounded-xl w-10 h-10 text-slate-500 hover:text-rose-600 transition"
+              type="button"
+              aria-label="Notifications"
+              onClick={() =>
+                setOpenMenu(
+                  openMenu === "notifications" ? null : "notifications",
+                )
+              }
+              className="relative place-items-center grid hover:bg-indigo-50 rounded-xl w-11 h-11 text-slate-600 hover:text-indigo-700 transition"
             >
-              <LogOut size={18} />
+              <Bell size={19} />
+              <span className="top-2 right-2 absolute bg-rose-500 rounded-full ring-2 ring-white w-2 h-2" />
             </button>
+            {openMenu === "notifications" && (
+              <div className="right-0 z-50 absolute bg-white shadow-xl mt-2 p-4 border border-slate-200 rounded-2xl w-72 text-left">
+                <p className="font-bold text-slate-900">
+                  Notifications{" "}
+                  <span className="text-slate-400" lang="ar">
+                    · الإشعارات
+                  </span>
+                </p>
+                <p className="bg-amber-50 mt-3 p-3 rounded-xl text-amber-800 text-sm">
+                  A new assessment is ready to review.
+                </p>
+                <p className="mt-2 text-slate-500 text-xs">Today · 9:30 AM</p>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Messages"
+              onClick={() =>
+                setOpenMenu(openMenu === "messages" ? null : "messages")
+              }
+              className="place-items-center grid hover:bg-indigo-50 rounded-xl w-11 h-11 text-slate-600 hover:text-indigo-700 transition"
+            >
+              <Mail size={19} />
+            </button>
+            {openMenu === "messages" && (
+              <div className="right-0 z-50 absolute bg-white shadow-xl mt-2 p-4 border border-slate-200 rounded-2xl w-72 text-left">
+                <p className="font-bold text-slate-900">
+                  Messages{" "}
+                  <span className="text-slate-400" lang="ar">
+                    · الرسائل
+                  </span>
+                </p>
+                <p className="bg-indigo-50 mt-3 p-3 rounded-xl text-indigo-800 text-sm">
+                  Welcome! Your learning team is here to help.
+                </p>
+                <p className="mt-2 text-slate-500 text-xs">
+                  Academic support · Today
+                </p>
+              </div>
+            )}
+          </div>
+          {activeName ? (
+            <>
+              <div className="hidden sm:block text-right">
+                <p className="max-w-40 font-semibold text-slate-800 text-sm truncate">
+                  {activeName}
+                </p>
+                <p className="max-w-48 text-slate-500 text-xs truncate">
+                  {activeDetail}
+                </p>
+              </div>
+              <span className="place-items-center grid bg-indigo-100 rounded-full ring-2 ring-white w-10 h-10 font-bold text-indigo-700 text-sm">
+                {activeName.trim().charAt(0)}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 hover:bg-rose-50 px-2 sm:px-3 rounded-xl min-h-11 font-semibold text-slate-600 hover:text-rose-600 text-xs transition"
+              >
+                <LogOut size={17} />
+                <span className="hidden sm:inline">Logout / تسجيل خروج</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 shadow-sm px-4 rounded-xl min-h-11 font-semibold text-white text-sm transition"
+            >
+              Sign in / تسجيل الدخول
+            </Link>
           )}
         </div>
       </div>
-      <nav
-        aria-label="Switch role"
-        className="sm:hidden flex justify-center gap-2 px-4 py-2 border-slate-100 border-t"
-      >
-        {roles.map(({ id, label, href, icon: Icon }) => (
-          <Link
-            key={id}
-            href={href}
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${id === role ? "bg-indigo-50 text-indigo-700" : "text-slate-500"}`}
-          >
-            <Icon size={13} /> {label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

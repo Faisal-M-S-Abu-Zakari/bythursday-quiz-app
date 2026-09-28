@@ -460,8 +460,8 @@ export const mockArabicQuiz: Quiz = {
   },
   createdBy: "teacher_001",
   createdAt: new Date("2024-09-01"),
-  openDate: new Date("2024-09-15"),
-  closeDate: new Date("2024-09-30"),
+  openDate: new Date(),
+  closeDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
   totalPoints: 75,
   isActive: true,
 };
@@ -718,8 +718,8 @@ export const mockEnglishQuiz: Quiz = {
   },
   createdBy: "teacher_002",
   createdAt: new Date("2024-09-05"),
-  openDate: new Date("2024-09-16"),
-  closeDate: new Date("2024-10-01"),
+  openDate: new Date(),
+  closeDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
   totalPoints: 75,
   isActive: true,
 };
