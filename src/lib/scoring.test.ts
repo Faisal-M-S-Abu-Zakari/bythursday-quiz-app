@@ -1,5 +1,10 @@
-import { describe, it, expect } from '@jest/globals';
-import { calculateScore, getCorrectAnswersCount } from '../lib/scoring';
+import {
+  calculateScore,
+  getCorrectAnswersCount,
+  generateQuizResult,
+  isAnswerCorrect,
+  calculateQuizAnalytics,
+} from '../lib/scoring';
 import { StudentQuizAttempt, Quiz, Question, QuizOption } from '../types/quiz';
 
 // Mock data
@@ -141,7 +146,7 @@ describe('Scoring Engine', () => {
       const { score, percentage } = calculateScore(attempt, quiz);
 
       expect(score).toBe(18); // 3 + 0 + 15
-      expect(percentage).toBe(60); // 18/30 * 100
+      expect(percentage).toBe(72); // 18/25 * 100
     });
   });
 
@@ -326,4 +331,132 @@ describe('Scoring Engine', () => {
       expect(percentage).toBe(33.33);
     });
   });
+
+  describe('isAnswerCorrect', () => {
+    const questions = [createMockQuestion('q1', 5)];
+    const quiz = createMockQuiz(questions, false);
+
+    it('should return true for correct answer option', () => {
+      expect(isAnswerCorrect('q1', 'q1-opt1', quiz)).toBe(true);
+    });
+
+    it('should return false for incorrect answer option', () => {
+      expect(isAnswerCorrect('q1', 'q1-opt2', quiz)).toBe(false);
+    });
+
+    it('should return false for nonexistent question', () => {
+      expect(isAnswerCorrect('q999', 'q1-opt1', quiz)).toBe(false);
+    });
+
+    it('should return false for nonexistent option', () => {
+      expect(isAnswerCorrect('q1', 'opt_does_not_exist', quiz)).toBe(false);
+    });
+  });
+
+  describe('generateQuizResult', () => {
+    it('should construct a complete QuizResult object with calculated metrics', () => {
+      const questions = [
+        createMockQuestion('q1', 10, 2),
+        createMockQuestion('q2', 10, 2),
+      ];
+      const quiz = createMockQuiz(questions, true, 2);
+      const startTime = new Date(Date.now() - 120000); // 2 minutes ago
+      const endTime = new Date();
+      const attempt: StudentQuizAttempt = {
+        id: 'att_001',
+        studentId: 'student_123',
+        quizId: quiz.id,
+        startedAt: startTime,
+        completedAt: endTime,
+        answers: [
+          { questionId: 'q1', selectedOptionId: 'q1-opt1', timeSpentSeconds: 45 },
+          { questionId: 'q2', selectedOptionId: 'q2-opt2', timeSpentSeconds: 75 },
+        ],
+        score: undefined,
+        percentage: undefined,
+        hasSubmitted: true,
+      };
+
+      const result = generateQuizResult(attempt, quiz, 'Zaid Al-Harbi');
+
+      expect(result.attemptId).toBe('att_001');
+      expect(result.studentId).toBe('student_123');
+      expect(result.studentName).toBe('Zaid Al-Harbi');
+      expect(result.quizId).toBe(quiz.id);
+      expect(result.quizTitle).toBe(quiz.title);
+      expect(result.totalPoints).toBe(20);
+      expect(result.totalQuestions).toBe(2);
+      expect(result.correctAnswers).toBe(1);
+      expect(result.negativeMarksDeducted).toBe(2);
+      expect(result.score).toBe(8); // 10 - 2
+      expect(result.percentage).toBe(40); // 8/20 * 100
+      expect(result.timeTakenSeconds).toBeGreaterThanOrEqual(119);
+    });
+  });
+
+  describe('calculateQuizAnalytics', () => {
+    it('should aggregate statistics across submitted attempts correctly', () => {
+      const questions = [
+        createMockQuestion('q1', 10),
+        createMockQuestion('q2', 10),
+      ];
+      const quiz = createMockQuiz(questions, false);
+
+      const attempts: StudentQuizAttempt[] = [
+        {
+          id: 'att_1',
+          studentId: 'student_001',
+          quizId: quiz.id,
+          startedAt: new Date(),
+          completedAt: new Date(),
+          hasSubmitted: true,
+          answers: [
+            { questionId: 'q1', selectedOptionId: 'q1-opt1', timeSpentSeconds: 20 },
+            { questionId: 'q2', selectedOptionId: 'q2-opt1', timeSpentSeconds: 30 },
+          ],
+        },
+        {
+          id: 'att_2',
+          studentId: 'student_002',
+          quizId: quiz.id,
+          startedAt: new Date(),
+          completedAt: new Date(),
+          hasSubmitted: true,
+          answers: [
+            { questionId: 'q1', selectedOptionId: 'q1-opt1', timeSpentSeconds: 25 },
+            { questionId: 'q2', selectedOptionId: 'q2-opt2', timeSpentSeconds: 35 },
+          ],
+        },
+      ];
+
+      const analytics = calculateQuizAnalytics(attempts, quiz);
+
+      expect(analytics.totalAttempts).toBe(2);
+      expect(analytics.totalSubmissions).toBe(2);
+      expect(analytics.highestScore).toBe(20);
+      expect(analytics.lowestScore).toBe(10);
+      expect(analytics.averageScore).toBe(15);
+      expect(analytics.averagePercentage).toBe(75);
+      expect(analytics.completionRate).toBe(100);
+
+      const q1Stats = analytics.questionAnalysis.find(q => q.questionId === 'q1');
+      expect(q1Stats?.correctCount).toBe(2);
+      expect(q1Stats?.incorrectCount).toBe(0);
+
+      const q2Stats = analytics.questionAnalysis.find(q => q.questionId === 'q2');
+      expect(q2Stats?.correctCount).toBe(1);
+      expect(q2Stats?.incorrectCount).toBe(1);
+    });
+
+    it('should handle empty attempts gracefully', () => {
+      const quiz = createMockQuiz([createMockQuestion('q1', 10)], false);
+      const analytics = calculateQuizAnalytics([], quiz);
+
+      expect(analytics.totalAttempts).toBe(0);
+      expect(analytics.totalSubmissions).toBe(0);
+      expect(analytics.averageScore).toBe(0);
+      expect(analytics.completionRate).toBe(0);
+    });
+  });
 });
+

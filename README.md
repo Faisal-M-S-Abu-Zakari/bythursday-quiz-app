@@ -139,12 +139,11 @@ npm test -- scoring.test.ts
 npm test -- --coverage
 ```
 
-Tests cover:
-✅ Positive marking calculation  
-✅ Negative marking deductions  
-✅ Score flooring (never negative)  
-✅ Percentage calculations  
-✅ Correct answer counting  
+Tests cover (61 tests across 4 suites):
+✅ **Scoring Engine** (`scoring.test.ts`): Positive marking, negative marking deductions, zero-floor checks, fractional percentage rounding, answers counting, analytics aggregation, and result generation.  
+✅ **Platform Utilities** (`utils.test.ts`): Time formatting (MM:SS), exam window availability checks, remaining attempts calculation, student attempt restrictions, RTL text direction detection, and attempt ID generator.  
+✅ **Authentication** (`auth.test.ts`): Demo credentials validation (student, teacher, admin), password checking, and role-based redirect path resolution.  
+✅ **Component Testing** (`QuizTimer.test.tsx`): React countdown timers, auto-expiry callback dispatch, critical/low-time alert thresholds, and bilingual (AR/EN) warnings.  
 
 ## Browser Support
 
@@ -176,7 +175,10 @@ Tests cover:
 - `src/types/quiz.ts` - Quiz types
 - `src/lib/scoring.ts` - Scoring engine
 - `src/data/mockData.ts` - Mock data
-- `src/lib/scoring.test.ts` - Unit tests
+- `src/lib/scoring.test.ts` - Scoring engine unit tests
+- `src/lib/utils.test.ts` - Platform utilities unit tests
+- `src/lib/auth.test.ts` - Authentication & routing unit tests
+- `src/components/__tests__/QuizTimer.test.tsx` - QuizTimer component unit & integration tests
 
 ### Phase 2: Student Experience
 - `src/context/StudentContext.tsx` - Student state
